@@ -35,13 +35,13 @@ display: inline-block;
 }
 
 ul.fallingtextrotator > li.dropdown span[class*="char"]{
-opacity: 0;
--moz-transform: translateY(300px) rotateZ(120deg); /* drop down and rotate */
--webkit-transform: translateY(300px) rotateZ(120deg);
-transform: translateY(300px) rotateZ(120deg);
--moz-transition: all 0.3s ease-in; /* change 0.3s to reflect desired duration of each word/letter dropping down */
--webkit-transition: all 0.3s ease-in;
--o-transition: all 0.3s ease-in;
--ms-transition: all 0.3s ease-in;
-transition: all 0.3s ease-in;
+ opacity: 0;
+ -moz-transform: translateY(1300px) rotateZ(220deg); /* drop down and rotate */
+ -webkit-transform: translateY(1300px) rotateZ(220deg);
+ transform: translateY(1300px) rotateZ(220deg);
+ -moz-transition: all 1s ease-in;
+ -webkit-transition: all 1s ease-in;
+ -o-transition: all 1s ease-in;
+ -ms-transition: all 1s ease-in;
+ transition: all 1s ease-in;
 }
