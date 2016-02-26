@@ -1,0 +1,47 @@
+ul.fallingtextrotator{
+font-family: 'Orbitron', sans-serif; /* font style. Default uses Google fonts */
+text-shadow: 2px 2px #C0F5A9, 3px 3px #C0F5A9, 4px 4px #C0F5A9, 5px 5px #C0F5A9, 6px 6px #C0F5A9;
+font-size: 48px; /* font size of text */
+color: #217C23;
+letter-spacing: 10px;
+font-weight: 800;
+text-transform: uppercase;
+position: relative;
+list-style: none;
+margin: 0;
+padding: 0;
+}
+
+ul.fallingtextrotator > li{
+position: absolute;
+opacity: 0;
+top: 0;
+left: 0;
+-moz-transition: all 0.3s ease-in; /* change 0.3s to reflect desired duration of effect on entire sentence (ie: fade in/out) */
+-webkit-transition: all 0.3s ease-in;
+-o-transition: all 0.3s ease-in;
+-ms-transition: all 0.3s ease-in;
+transition: all 0.3s ease-in;
+}
+
+ul.fallingtextrotator > li:nth-of-type(even){
+color: #713800;
+text-shadow: 2px 2px #FDE0A6, 3px 3px #FDE0A6, 4px 4px #FDE0A6, 5px 5px #FDE0A6, 6px 6px #FDE0A6;
+}
+
+
+ul.fallingtextrotator > li span[class*="char"]{
+display: inline-block;
+}
+
+ul.fallingtextrotator > li.dropdown span[class*="char"]{
+opacity: 0;
+-moz-transform: translateY(300px) rotateZ(120deg); /* drop down and rotate */
+-webkit-transform: translateY(300px) rotateZ(120deg);
+transform: translateY(300px) rotateZ(120deg);
+-moz-transition: all 0.3s ease-in; /* change 0.3s to reflect desired duration of each word/letter dropping down */
+-webkit-transition: all 0.3s ease-in;
+-o-transition: all 0.3s ease-in;
+-ms-transition: all 0.3s ease-in;
+transition: all 0.3s ease-in;
+}
