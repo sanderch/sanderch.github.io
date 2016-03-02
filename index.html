@@ -5,8 +5,15 @@
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script src="jquery.lettering-0.6.1.min.js"></script>
 <script src="fallingtextrotator.js"></script>
-<script>
 
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+		<link rel="stylesheet" href="http://josex2r.github.io/jQuery-SlotMachine/css/style.css" type="text/css" media="screen" />
+		<link rel="stylesheet" href="http://josex2r.github.io/jQuery-SlotMachine/dist/jquery.slotmachine.css" type="text/css" media="screen" />
+
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+		<script type="text/javascript" src="http://josex2r.github.io/jQuery-SlotMachine/dist/jquery.slotmachine.js"></script>
+		
+<script>
 
 jQuery(function(){ // on DOM load
 
@@ -17,7 +24,54 @@ jQuery(function(){ // on DOM load
 			// console.log(msgindex, msg, eachchar)
 		}
 	})
-})
+});
+
+
+$(document).ready(function(){
+	var machine1 = $("#machine1").slotMachine({
+		active	: 0,
+		delay	: 500
+	});
+
+	var machine2 = $("#machine2").slotMachine({
+		active	: 1,
+		delay	: 500,
+		direction: 'down'
+	});
+
+	var machine3 = $("#machine3").slotMachine({
+		active	: 2,
+		delay	: 500
+	});
+
+	function onComplete(active){
+		switch(this.element[0].id){
+			case 'machine1':
+				$("#machine1Result").text("Index: "+this.active);
+				break;
+			case 'machine2':
+				$("#machine2Result").text("Index: "+this.active);
+				break;
+			case 'machine3':
+				$("#machine3Result").text("Index: "+this.active);
+				break;
+		}
+	}
+
+	$("#ranomizeButton").click(function(){
+
+		machine1.shuffle(5, onComplete);
+
+		setTimeout(function(){
+			machine2.shuffle(5, onComplete);
+		}, 500);
+
+		setTimeout(function(){
+			machine3.shuffle(5, onComplete);
+		}, 1000);
+
+	})
+});
 
 </script>
 </head>
@@ -26,6 +80,51 @@ jQuery(function(){ // on DOM load
 <li>Jo!</li>
 <li></li>
 </ul>
+
+		<div id="randomize">
+			<div class="content container" style="text-align: center;max-width: 900px;">
+				<h1>Strategy Generator!</h1>
+
+				<div class="row">
+					<div class="col-xs-2">
+						<div>
+							<div id="machine1" class="randomizeMachine">
+								<div>Reuse</div>
+								<div>Buy</div>
+								<div>Build</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-xs-3">before</div>
+					<div class="col-xs-2">
+						<div>
+							<div id="machine2" class="randomizeMachine">
+								<div>Reuse</div>
+								<div>Buy</div>
+								<div>Build</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-xs-3">before</div>
+					<div class="col-xs-2">
+						<div>
+							<div id="machine3" class="randomizeMachine">
+								<div>Reuse</div>
+								<div>Buy</div>
+								<div>Build</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div>
+					<div class="btn-group btn-group-justified btn-group-randomize" role="group">
+						<div id="ranomizeButton" type="button" class="btn btn-danger btn-lg">GENERATE</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
 </body>
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
