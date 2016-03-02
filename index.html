@@ -43,17 +43,28 @@ $(document).ready(function(){
 		active	: 2,
 		delay	: 500
 	});
-
+	var m1res = -1;
+	var m2res = -1;
 	function onComplete(active){
 		switch(this.element[0].id){
 			case 'machine1':
 				$("#machine1Result").text("Index: "+this.active);
+				m1res = this._active;
 				break;
 			case 'machine2':
 				$("#machine2Result").text("Index: "+this.active);
+				if (m1res == this._active){
+					machine2.shuffle(5, onComplete);
+					machine3.shuffle(5, onComplete);
+				} else {
+					m2res = this._active;
+				}
 				break;
 			case 'machine3':
 				$("#machine3Result").text("Index: "+this.active);
+				if (m2res == this._active || m1res == this._active){
+					machine3.shuffle(5, onComplete);
+				}
 				break;
 		}
 	}
@@ -81,9 +92,9 @@ $(document).ready(function(){
 <li></li>
 </ul>
 
-		<div id="randomize">
+		<div style="background: #AAAAAA url('light_texture.png'); height: 200px">
 			<div class="content container" style="text-align: center;max-width: 900px;">
-				<h1>Strategy Generator!</h1>
+				<h1>Strategy Generator</h1>
 
 				<div class="row">
 					<div class="col-xs-2">
