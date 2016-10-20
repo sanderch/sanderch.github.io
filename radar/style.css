@@ -1,0 +1,13 @@
+/* Styles go here */
+
+.abs{
+  position: absolute;
+  background-image: url(http://icons.iconarchive.com/icons/pelfusion/long-shadow-media/512/Document-icon.png);
+  background-size: 100%;
+}
+
+#map {
+    width: 90%;
+    height: 700px;
+    margin: 0 auto;
+}
