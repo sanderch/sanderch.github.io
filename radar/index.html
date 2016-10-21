@@ -9,10 +9,20 @@
     <script src="urlParam.js"></script>
 </head>
 <body>
-<div id="map"></div>
-
-<script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCGk54I6zM9WycQFviYizLjkuJzugw3r2M&signed_in=true&callback=initMap"></script>
+    <div>
+        <div style="padding-left: 90px; padding-top: 90px; position: absolute; z-index: 3;">
+            <label id="lblCar" style="font-size: 30px; font-weight: bold; color: gray;"> Cars: <span id="autoCnt">0</span> </label>
+        </div>
+        <div style="padding-left: 90px; padding-top: 150px; position: absolute; z-index: 3;">
+            <label id="lblContent" style="font-size: 30px; font-weight: bold; color: gray;"> Content: <span id="contentCnt">0</span> </label>
+        </div>
+        <div style="padding-left: 90px; padding-top: 210px; position: absolute; z-index: 3;">
+            <label id="lblBuilding" style="font-size: 30px; font-weight: bold; color: gray; "> Buildings: <span id="buildingCnt">0</span> </label>
+        </div>
+        <div id="map"></div>
+    </div>
+    <script async defer
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCwWAd_-9BVu-WzrE9_lqBzqcppOxa14wE&signed_in=true&callback=initMap"></script>
 </body>
 
 </html>

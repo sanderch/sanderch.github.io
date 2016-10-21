@@ -48,10 +48,17 @@ var showClaim = function (claimData) {
                     markers.push(marker);
                 }, showTimeout);
 
+                switch (claimData.carbrand) {
+                    case "Building": { $("#buildingCnt").text(parseInt($("#buildingCnt").text())+1); break; } 
+                    case "Content": { $("#contentCnt").text(parseInt($("#contentCnt").text())+1); break; }
+                    default:  { $("#autoCnt").text(parseInt($("#autoCnt").text())+1); break; }
+
+                }
 
                 removeMarker(marker, hideTimeout);
             }
         });
+
 }
 
 var removeMarker = function (marker, timeout) {
