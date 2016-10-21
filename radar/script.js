@@ -3,34 +3,21 @@ var markers = [];
 var map = null;
 var showTimeout = 50;
 var hideTimeout = 5000;
+var mapStyles = [];
 
 $(document).ready(function () {
-    
+    var turbomode = $.urlParam("turbomode") || 1;    
     (function loop() {
-        var rand = Math.round(Math.random() * (1000));
+        var rand = Math.round(Math.random() * (5000/turbomode));
         setTimeout(function () {
-            var t = claimData.pop();
-            showClaim(t);
-            // alert(JSON.stringify(t));
+            var claimDatum = claimData.pop();
+            showClaim(claimDatum);
             loop();
         }, rand);
     }());
 
    
 });
-
-var testClaim = {
-    'id': 1,
-    'country': 'SE',
-    'zip': '693 70',
-    'total': 10000,
-    'carbrand': 'audi',
-    'datetime': '2016-01-01T23:12:56'
-};
-
-var updateCounter = function () {
-    $('#cntr').text($('div').length);
-}
 
 var showClaim = function (claimData) {
     var image = getIcon(claimData);
@@ -44,9 +31,9 @@ var showClaim = function (claimData) {
 
     var countryCode = country=="norway" ? "no" : country=="sweden" ? "se" : "dk";
 
-    console.log("http://maps.googleapis.com/maps/api/geocode/json?components=country:" + countryCode + "&address=" + country + ", " + zip + "&sensor=false")
-    $.get("http://maps.googleapis.com/maps/api/geocode/json?address=" + country + ", " + zip +
-        "&sensor=false", function (data) {
+    console.log("http://maps.googleapis.com/maps/api/geocode/json?region=" + countryCode + "&components=country:" + countryCode + "&address=" + country + ", " + zip + "&sensor=false")
+    $.get("http://maps.googleapis.com/maps/api/geocode/json?region=" + countryCode + "&components=country:" + countryCode + "&address=" + country + ", " + zip + "&sensor=false", 
+        function (data) {
             if (data.status === 'OK' && data.results.length > 0) {
                 var coordinates = data.results[0].geometry.location;
 
@@ -95,7 +82,7 @@ function getIcon(claimData) {
         total = 50000;
     }
     
-    var size = (total / 50000) * 24 + 15;
+    var size = (total / 50000.0) * 24 + 32;
 
     var icon = {
         url: claimData.carbrand == "Content" ? "icons/bike.png" : claimData.carbrand == "Building" ? "icons/house.ico" : "icons/car.png",
@@ -123,90 +110,9 @@ function initMap() {
         map = new google.maps.Map(document.getElementById('map'),
         {
             zoom: 5,
-            center: { lat: 57.2973031, lng: 12.7991264 },
-            styles: [
-            {elementType: 'geometry', stylers: [{color: '#242f3e'}]},
-            {elementType: 'labels.text.stroke', stylers: [{color: '#242f3e'}]},
-            {elementType: 'labels.text.fill', stylers: [{color: '#746855'}]},
-            {
-              featureType: 'administrative.locality',
-              elementType: 'labels.text.fill',
-              stylers: [{color: '#d59563'}]
-            },
-            {
-              featureType: 'poi',
-              elementType: 'labels.text.fill',
-              stylers: [{color: '#d59563'}]
-            },
-            {
-              featureType: 'poi.park',
-              elementType: 'geometry',
-              stylers: [{color: '#263c3f'}]
-            },
-            {
-              featureType: 'poi.park',
-              elementType: 'labels.text.fill',
-              stylers: [{color: '#6b9a76'}]
-            },
-            {
-              featureType: 'road',
-              elementType: 'geometry',
-              stylers: [{color: '#38414e'}]
-            },
-            {
-              featureType: 'road',
-              elementType: 'geometry.stroke',
-              stylers: [{color: '#212a37'}]
-            },
-            {
-              featureType: 'road',
-              elementType: 'labels.text.fill',
-              stylers: [{color: '#9ca5b3'}]
-            },
-            {
-              featureType: 'road.highway',
-              elementType: 'geometry',
-              stylers: [{color: '#746855'}]
-            },
-            {
-              featureType: 'road.highway',
-              elementType: 'geometry.stroke',
-              stylers: [{color: '#1f2835'}]
-            },
-            {
-              featureType: 'road.highway',
-              elementType: 'labels.text.fill',
-              stylers: [{color: '#f3d19c'}]
-            },
-            {
-              featureType: 'transit',
-              elementType: 'geometry',
-              stylers: [{color: '#2f3948'}]
-            },
-            {
-              featureType: 'transit.station',
-              elementType: 'labels.text.fill',
-              stylers: [{color: '#d59563'}]
-            },
-            {
-              featureType: 'water',
-              elementType: 'geometry',
-              stylers: [{color: '#17263c'}]
-            },
-            {
-              featureType: 'water',
-              elementType: 'labels.text.fill',
-              stylers: [{color: '#515c6d'}]
-            },
-            {
-              featureType: 'water',
-              elementType: 'labels.text.stroke',
-              stylers: [{color: '#17263c'}]
-            }
-          ]
+            center: { lat: 60.1702076, lng: 14.931883 },
+            styles: $.urlParam('nightmode') ? mapStylesNight : mapStylesDay
         });
-
-        showClaim(testClaim, 50, 3000);
     }
 }
 
