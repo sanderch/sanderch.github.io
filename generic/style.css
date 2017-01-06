@@ -1,0 +1,18 @@
+.entity {
+  border: 1px solid green;
+  border-top-width:5px;
+  margin: 2px;
+  padding: 2px;
+  width:200px;
+}
+
+.icon {
+  width:16px;
+}
+
+.addproperty {
+  content:url("http://www.iconsdb.com/icons/preview/caribbean-blue/add-property-xxl.png");
+}
+.addlink {
+  content:url("http://e4cdp.org/wp-content/themes/e4cdp/images/link.png");
+}
