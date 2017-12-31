@@ -1,16 +1,17 @@
 /* jshint esversion: 6 */
 let angle = 0;
 let img;
-let capture;
-
-function setup() {
-	createCanvas(400,400,WEBGL);
-	capture = createCapture(VIDEO);
-  	capture.size(320, 240);
-}
+let capt;
 
 function preload() {
 	img = loadImage('https://i0.wp.com/deathensemble.com/blog/wp-content/uploads/2013/08/Christopher-Lloyd-as-Doc-Brown.jpg');
+}
+
+function setup() {
+	createCanvas(400, 400, WEBGL);
+	capt = createCapture(VIDEO);
+  	capt.size(320, 320);
+  	capt.hide();
 }
 
 function draw() {
@@ -21,15 +22,22 @@ function draw() {
 	v.div(100);
 	ambientLight(150, 150, 150);
 	directionalLight(255, 255, 255, v);
+	
+	push();
 	rotateX(angle);
 	rotateY(angle * 0.3);
 	rotateZ(angle * 1.2);
 
 	noStroke();
 	//ambientMaterial(255);
-	texture(img);
+	texture(capt);
+	box(100);
+	pop();
 
-	box(200,200);
+	translate(0,100);
+	rotateX(HALF_PI);
+	ambientMaterial(0, 255, 0);
+	plane(500, 500);
 
-	angle += 0.003;
+	angle += 0.03;
 }
