@@ -26,6 +26,7 @@ function draw() {
 			let h = floor(map(sin(a), -1, 1, 100, 300));
 			translate(x - width / 2, 0, z - height / 2);
 			normalMaterial(255);
+			noStroke();
 			box(w, h, w);
 			pop();
 		}
