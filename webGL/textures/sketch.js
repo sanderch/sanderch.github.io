@@ -3,10 +3,6 @@ let angle = 0;
 let img;
 let capt;
 
-function preload() {
-	img = loadImage('https://i0.wp.com/deathensemble.com/blog/wp-content/uploads/2013/08/Christopher-Lloyd-as-Doc-Brown.jpg');
-}
-
 function setup() {
 	createCanvas(400, 400, WEBGL);
 	capt = createCapture(VIDEO);
