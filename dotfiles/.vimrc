@@ -125,6 +125,7 @@ set notimeout ttimeout ttimeoutlen=200
 " Use <F11> to toggle between 'paste' and 'nopaste'
 set pastetoggle=<F11>
  
+set autochdir
  
 "------------------------------------------------------------
 " Indentation options {{{1
@@ -149,8 +150,22 @@ Plug 'https://github.com/tmadsen/vim-compiler-plugin-for-dotnet.git'
 Plug 'dense-analysis/ale'
 Plug 'tpope/vim-fugitive'
 Plug 'vim-airline/vim-airline'
+Plug 'OmniSharp/omnisharp-vim'
+Plug 'https://github.com/airblade/vim-gitgutter.git'
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'morhetz/gruvbox'
+Plug 'preservim/nerdtree'
+
+Plug 'https://github.com/ctrlpvim/ctrlp.vim.git'
+Plug 'OmniSharp/omnisharp-vim'
+Plug 'https://github.com/vim-syntastic/syntastic.git'
+Plug 'https://github.com/SirVer/ultisnips.git'
+Plug 'https://github.com/honza/vim-snippets.git'
+" ctrlp.vim  omnisharp-vim  syntastic  ultisnips  vim-snippets
+"Plug 'https://github.com/vim-syntastic/syntastic.git'
 call plug#end() 
  
+let g:coc_global_extensions=['coc-omnisharp']
 "------------------------------------------------------------
 " Mappings {{{1
 "
@@ -163,7 +178,8 @@ map Y y$
 " Map <C-L> (redraw screen) to also turn off search highlighting until the
 " next search
 nnoremap <C-L> :nohl<CR><C-L>
- 
+map <silent> <C-n> :NERDTreeToggle<CR> 
+
 "------------------------------------------------------------
 
 nnoremap <C-K> :call HighlightNearCursor()<CR>
@@ -201,14 +217,14 @@ execute pathogen#infect()
 let g:OmniSharp_server_stdio = 1
 
 " Timeout in seconds to wait for a response from the server
-let g:OmniSharp_timeout = 5
+let g:OmniSharp_timeout = 2
 
 " Don't autoselect first omnicomplete option, show options even if there is only
 " one (so the preview documentation is accessible). Remove 'preview', 'popup'
 " and 'popuphidden' if you don't want to see any documentation whatsoever.
 " Note that neovim does not support `popuphidden` or `popup` yet: 
 " https://github.com/neovim/neovim/issues/10996
-set completeopt=menuone
+set completeopt=longest,menuone
 
 " Highlight the completion documentation popup background/foreground the same as
 " the completion menu itself, for better readability with highlighted
@@ -226,6 +242,9 @@ set previewheight=5
 
 " Tell ALE to use OmniSharp for linting C# files, and no other linters.
 let g:ale_linters = { 'cs': ['OmniSharp'] }
+
+" syntastic
+let g:syntastic_cs_checkers = ['code_checker']
 
 " Update semantic highlighting on BufEnter, InsertLeave and TextChanged
 let g:OmniSharp_highlight_types = 2
@@ -280,3 +299,9 @@ nnoremap <Leader>sp :OmniSharpStopServer<CR>
 
 " Enable snippet completion
 let g:OmniSharp_want_snippet=1
+
+if !exists(":DiffOrig")
+    command DiffOrig vert new | set bt=nofile | r # | 0d_ | diffthis
+          \ | wincmd p | diffthis
+endif
+
