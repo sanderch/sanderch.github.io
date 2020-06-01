@@ -168,11 +168,13 @@ Plug 'OmniSharp/omnisharp-vim'
 Plug 'https://github.com/vim-syntastic/syntastic.git'
 Plug 'https://github.com/SirVer/ultisnips.git'
 Plug 'https://github.com/honza/vim-snippets.git'
+Plug 'junegunn/fzf.vim'
 " ctrlp.vim  omnisharp-vim  syntastic  ultisnips  vim-snippets
 "Plug 'https://github.com/vim-syntastic/syntastic.git'
 call plug#end() 
  
 let g:coc_global_extensions=['coc-omnisharp']
+let g:coc_disable_startup_warning = 1
 "------------------------------------------------------------
 " Mappings {{{1
 "
@@ -187,6 +189,9 @@ map Y y$
 nnoremap <C-L> :nohl<CR><C-L>
 map <silent> <C-n> :NERDTreeToggle<CR> 
 
+"map tab and shift+tab to cykle between the buffers
+nnoremap  <silent>   <tab>  :if &modifiable && !&readonly && &modified <CR> :write<CR> :endif<CR>:bnext<CR>
+nnoremap  <silent> <s-tab>  :if &modifiable && !&readonly && &modified <CR> :write<CR> :endif<CR>:bprevious<CR>
 "------------------------------------------------------------
 
 nnoremap <C-K> :call HighlightNearCursor()<CR>
