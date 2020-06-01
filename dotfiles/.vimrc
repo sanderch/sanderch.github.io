@@ -223,7 +223,6 @@ let &t_EI.="\e[1 q"
 let &t_te.="\e[0 q"
 
 set runtimepath^=~/.vim/bundle/ctrlp.vim
-execute pathogen#infect()
 
 " Use the stdio OmniSharp-roslyn server
 let g:OmniSharp_server_stdio = 1
