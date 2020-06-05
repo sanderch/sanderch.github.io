@@ -117,7 +117,7 @@ set mouse=a
 set cmdheight=2
  
 " Display line numbers on the left
-set number
+set relativenumber
  
 " Quickly time out on keycodes, but never time out on mappings
 set notimeout ttimeout ttimeoutlen=200
@@ -169,12 +169,14 @@ Plug 'https://github.com/vim-syntastic/syntastic.git'
 Plug 'https://github.com/SirVer/ultisnips.git'
 Plug 'https://github.com/honza/vim-snippets.git'
 Plug 'junegunn/fzf.vim'
+Plug 'puremourning/vimspector'
 " ctrlp.vim  omnisharp-vim  syntastic  ultisnips  vim-snippets
 "Plug 'https://github.com/vim-syntastic/syntastic.git'
 call plug#end() 
  
 let g:coc_global_extensions=['coc-omnisharp']
-let g:coc_disable_startup_warning = 1
+"let g:coc_disable_startup_warning = 1
+
 "------------------------------------------------------------
 " Mappings {{{1
 "
@@ -194,16 +196,16 @@ nnoremap  <silent>   <tab>  :if &modifiable && !&readonly && &modified <CR> :wri
 nnoremap  <silent> <s-tab>  :if &modifiable && !&readonly && &modified <CR> :write<CR> :endif<CR>:bprevious<CR>
 "------------------------------------------------------------
 
-nnoremap <C-K> :call HighlightNearCursor()<CR>
-function HighlightNearCursor()
-  if !exists("s:highlightcursor")
-    match Todo /\k*\%#\k*/
-    let s:highlightcursor=1
-  else
-    match None
-    unlet s:highlightcursor
-  endif
-endfunction
+" nnoremap <C-K> :call HighlightNearCursor()<CR>
+" function HighlightNearCursor()
+"   if !exists("s:highlightcursor")
+"     match Todo /\k*\%#\k*/
+"     let s:highlightcursor=1
+"   else
+"     match None
+"     unlet s:highlightcursor
+"   endif
+" endfunction
 
 if &term =~ '^xterm\\|rxvt'
   " solid underscore
@@ -235,7 +237,7 @@ let g:OmniSharp_timeout = 2
 " and 'popuphidden' if you don't want to see any documentation whatsoever.
 " Note that neovim does not support `popuphidden` or `popup` yet: 
 " https://github.com/neovim/neovim/issues/10996
-set completeopt=longest,menuone
+set completeopt=longest,menuone,preview,popup,popuphidden
 
 " Highlight the completion documentation popup background/foreground the same as
 " the completion menu itself, for better readability with highlighted
@@ -284,8 +286,8 @@ augroup omnisharp_commands
     autocmd FileType cs inoremap <buffer> <C-\> <C-o>:OmniSharpSignatureHelp<CR>
 
     " Navigate up and down by method/property/field
-    autocmd FileType cs nnoremap <buffer> <C-k> :OmniSharpNavigateUp<CR>
-    autocmd FileType cs nnoremap <buffer> <C-j> :OmniSharpNavigateDown<CR>
+    " autocmd FileType cs nnoremap <buffer> <C-k> :OmniSharpNavigateUp<CR>
+    " autocmd FileType cs nnoremap <buffer> <C-j> :OmniSharpNavigateDown<CR>
 
     " Find all code errors/warnings for the current solution and populate the quickfix window
     autocmd FileType cs nnoremap <buffer> <Leader>cc :OmniSharpGlobalCodeCheck<CR>
@@ -316,3 +318,5 @@ if !exists(":DiffOrig")
           \ | wincmd p | diffthis
 endif
 
+" set gruvbox theme light
+set bg=light
