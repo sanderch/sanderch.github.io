@@ -170,6 +170,7 @@ Plug 'https://github.com/SirVer/ultisnips.git'
 Plug 'https://github.com/honza/vim-snippets.git'
 Plug 'junegunn/fzf.vim'
 Plug 'puremourning/vimspector'
+Plug 'jeetsukumaran/vim-buffergator'
 " ctrlp.vim  omnisharp-vim  syntastic  ultisnips  vim-snippets
 "Plug 'https://github.com/vim-syntastic/syntastic.git'
 call plug#end() 
@@ -225,6 +226,7 @@ let &t_EI.="\e[1 q"
 let &t_te.="\e[0 q"
 
 set runtimepath^=~/.vim/bundle/ctrlp.vim
+execute pathogen#infect()
 
 " Use the stdio OmniSharp-roslyn server
 let g:OmniSharp_server_stdio = 1
@@ -319,4 +321,4 @@ if !exists(":DiffOrig")
 endif
 
 " set gruvbox theme light
-set bg=light
+set bg=dark
