@@ -118,7 +118,10 @@ set cmdheight=2
  
 " Display line numbers on the left
 set relativenumber
- 
+
+" Display current line numer
+set number
+
 " Quickly time out on keycodes, but never time out on mappings
 set notimeout ttimeout ttimeoutlen=200
  
@@ -126,7 +129,7 @@ set notimeout ttimeout ttimeoutlen=200
 set pastetoggle=<F11>
  
 set autochdir
- 
+
 "------------------------------------------------------------
 " Indentation options {{{1
 "
@@ -239,7 +242,7 @@ let g:OmniSharp_timeout = 2
 " and 'popuphidden' if you don't want to see any documentation whatsoever.
 " Note that neovim does not support `popuphidden` or `popup` yet: 
 " https://github.com/neovim/neovim/issues/10996
-set completeopt=longest,menuone,preview,popup,popuphidden
+set completeopt=longest,menuone,preview
 
 " Highlight the completion documentation popup background/foreground the same as
 " the completion menu itself, for better readability with highlighted
@@ -264,6 +267,7 @@ let g:syntastic_cs_checkers = ['code_checker']
 " Update semantic highlighting on BufEnter, InsertLeave and TextChanged
 let g:OmniSharp_highlight_types = 2
 
+let g:vimspector_enable_mappins = 'VISUAL_STUDIO'
 augroup omnisharp_commands
     autocmd!
 
@@ -312,6 +316,19 @@ nnoremap <Leader>cf :OmniSharpCodeFormat<CR>
 nnoremap <Leader>ss :OmniSharpStartServer<CR>
 nnoremap <Leader>sp :OmniSharpStopServer<CR>
 
+" vimspector debugger remaps
+nnoremap <leader>dd :call vimspector#Launch()<CR>
+nnoremap <leader>de :call vimspector#Reset()<CR>
+nmap <leader>dl <Plug>VimspectorStepInto
+nmap <leader>dj <Plug>VimspectorStepOver
+nmap <leader>dk <Plug>VimspectorStepOut
+nmap <leader>d_ <Plug>VimspectorRestart
+nnoremap <leader>d<space> :call vimspector#Continue()<CR>
+
+nmap <leader>drc <Plug>VimspectorRunToCursor
+nmap <leader>dbp <Plug>VimspectorToggleBreakpoint
+nmap <leader>dcbp <Plug>VimspectorToggleConditionalBreakpoint
+
 " Enable snippet completion
 let g:OmniSharp_want_snippet=1
 
@@ -323,4 +340,3 @@ endif
 " set gruvbox theme light
 
 set bg=dark
-let g:vimspector_enable_mappins='HUMAN'
