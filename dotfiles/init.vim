@@ -171,9 +171,13 @@ Plug 'OmniSharp/omnisharp-vim'
 Plug 'https://github.com/vim-syntastic/syntastic.git'
 Plug 'https://github.com/SirVer/ultisnips.git'
 Plug 'https://github.com/honza/vim-snippets.git'
+Plug 'junegunn/fzf', { 'dir': '~/.fzf/bin/fzf'}
 Plug 'junegunn/fzf.vim'
 Plug 'puremourning/vimspector'
 Plug 'jeetsukumaran/vim-buffergator'
+Plug 'szw/vim-maximizer'
+Plug 'tpope/vim-dispatch'
+Plug 'chr4/nginx.vim'
 " ctrlp.vim  omnisharp-vim  syntastic  ultisnips  vim-snippets
 "Plug 'https://github.com/vim-syntastic/syntastic.git'
 call plug#end() 
@@ -295,7 +299,6 @@ augroup omnisharp_commands
     " autocmd FileType cs nnoremap <buffer> <C-k> :OmniSharpNavigateUp<CR>
     " autocmd FileType cs nnoremap <buffer> <C-j> :OmniSharpNavigateDown<CR>
 
-    " Find all code errors/warnings for the current solution and populate the quickfix window
     autocmd FileType cs nnoremap <buffer> <Leader>cc :OmniSharpGlobalCodeCheck<CR>
 augroup END
 
@@ -315,6 +318,9 @@ nnoremap <Leader>cf :OmniSharpCodeFormat<CR>
 " Start the omnisharp server for the current solution
 nnoremap <Leader>ss :OmniSharpStartServer<CR>
 nnoremap <Leader>sp :OmniSharpStopServer<CR>
+
+" maximizer
+nnoremap <leader>m :MaximizerToggle!<CR>
 
 " vimspector debugger remaps
 nnoremap <leader>dd :call vimspector#Launch()<CR>
