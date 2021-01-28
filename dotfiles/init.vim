@@ -285,6 +285,7 @@ augroup omnisharp_commands
     autocmd FileType cs nnoremap <buffer> <Leader>fi :OmniSharpFindImplementations<CR>
     autocmd FileType cs nnoremap <buffer> <Leader>fs :OmniSharpFindSymbol<CR>
     autocmd FileType cs nnoremap <buffer> <Leader>fu :OmniSharpFindUsages<CR>
+    autocmd FileType cs nnoremap <buffer> <Leader>ft :OmniSharpFindType<CR>
 
     " Finds members in the current buffer
     autocmd FileType cs nnoremap <buffer> <Leader>fm :OmniSharpFindMembers<CR>
