@@ -171,7 +171,7 @@ Plug 'OmniSharp/omnisharp-vim'
 Plug 'https://github.com/vim-syntastic/syntastic.git'
 Plug 'https://github.com/SirVer/ultisnips.git'
 Plug 'https://github.com/honza/vim-snippets.git'
-Plug 'junegunn/fzf', { 'dir': '~/.fzf/bin/fzf'}
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() }}
 Plug 'junegunn/fzf.vim'
 Plug 'puremourning/vimspector'
 Plug 'jeetsukumaran/vim-buffergator'
@@ -197,7 +197,11 @@ map Y y$
 " Map <C-L> (redraw screen) to also turn off search highlighting until the
 " next search
 nnoremap <C-L> :nohl<CR><C-L>
-map <silent> <C-n> :NERDTreeToggle<CR> 
+
+map <silent> <C-n> :NERDTreeToggle<CR>
+map <silent> <C-b> :Buffers<CR>
+map <silent> <C-m> :Make<CR>
+nnoremap <silent> <C-s> :if &modifiable && !&readonly && &modified <CR> :write<CR> :endif<CR>
 
 "map tab and shift+tab to cykle between the buffers
 nnoremap  <silent>   <tab>  :if &modifiable && !&readonly && &modified <CR> :write<CR> :endif<CR>:bnext<CR>
