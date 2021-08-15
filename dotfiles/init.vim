@@ -178,10 +178,13 @@ Plug 'jeetsukumaran/vim-buffergator'
 Plug 'szw/vim-maximizer'
 Plug 'tpope/vim-dispatch'
 Plug 'chr4/nginx.vim'
+Plug 'https://github.com/thanthese/Tortoise-Typing'
 " ctrlp.vim  omnisharp-vim  syntastic  ultisnips  vim-snippets
 "Plug 'https://github.com/vim-syntastic/syntastic.git'
 call plug#end() 
  
+let g:NERDTreeWinPos = "right"
+
 let g:coc_global_extensions=['coc-omnisharp']
 "let g:coc_disable_startup_warning = 1
 
@@ -200,7 +203,7 @@ nnoremap <C-L> :nohl<CR><C-L>
 
 map <silent> <C-n> :NERDTreeToggle<CR>
 map <silent> <C-b> :Buffers<CR>
-map <silent> <C-m> :Make<CR>
+"map <silent> <C-s-m> :Make<CR>
 nnoremap <silent> <C-s> :if &modifiable && !&readonly && &modified <CR> :write<CR> :endif<CR>
 
 "map tab and shift+tab to cykle between the buffers
