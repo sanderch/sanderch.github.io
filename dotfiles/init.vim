@@ -41,7 +41,7 @@ syntax on
 " files even in the same window, but is less efficient and is actually designed
 " for keeping undo history after closing Vim entirely. Vim will complain if you
 " try to quit without saving, and swap files will keep you safe if your computer
-" crashes.
+
 set hidden
  
 " Note that not everyone likes working this way (with the hidden option).
@@ -140,7 +140,7 @@ set autochdir
 set shiftwidth=4
 set softtabstop=4
 set expandtab
-
+set encoding=UTF-8
 " Indentation settings for using hard tabs for indent. Display tabs as
 " four characters wide.
 "set shiftwidth=4
@@ -179,6 +179,13 @@ Plug 'szw/vim-maximizer'
 Plug 'tpope/vim-dispatch'
 Plug 'chr4/nginx.vim'
 Plug 'https://github.com/thanthese/Tortoise-Typing'
+Plug 'ryanoasis/vim-devicons'
+Plug 'godlygeek/tabular'
+Plug 'preservim/vim-markdown'
+Plug 'https://github.com/pangloss/vim-javascript.git'
+Plug 'https://github.com/sotte/presenting.vim'
+Plug 'nvim-lua/plenary.nvim'
+Plug 'nvim-telescope/telescope.nvim', { 'tag': '0.1.1' }
 " ctrlp.vim  omnisharp-vim  syntastic  ultisnips  vim-snippets
 "Plug 'https://github.com/vim-syntastic/syntastic.git'
 call plug#end() 
@@ -320,6 +327,8 @@ nnoremap <Leader>nm :OmniSharpRename<CR>
 nnoremap <F2> :OmniSharpRename<CR>
 " Rename without dialog - with cursor on the symbol to rename: `:Rename newname`
 command! -nargs=1 Rename :call OmniSharp#RenameTo("<args>")
+
+command! Vb normal! <C-v>
 
 nnoremap <Leader>cf :OmniSharpCodeFormat<CR>
 
