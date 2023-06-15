@@ -46,8 +46,11 @@ return require('packer').startup(function(use)
 			{ 'L3MON4D3/LuaSnip' }, -- Required
 		}
 	}
+	use('https://github.com/honza/vim-snippets')
+	use('https://github.com/SirVer/ultisnips')
 	use({'OmniSharp/omnisharp-vim', config = function ()
-		vim.g.OmniSharp_server_use_net6 = 1
+		vim.g.OmniSharp_server_use_net6=1
+		vim.g.OmniSharp_want_snippet=1
 		-- print("from omnisharp config")
 	end })
 end)

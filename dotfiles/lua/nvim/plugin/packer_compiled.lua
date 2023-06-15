@@ -120,7 +120,7 @@ _G.packer_plugins = {
     url = "https://github.com/nvim-treesitter/nvim-treesitter"
   },
   ["omnisharp-vim"] = {
-    config = { "\27LJ\2\n;\0\0\2\0\3\0\0056\0\0\0009\0\1\0)\1\1\0=\1\2\0K\0\1\0\30OmniSharp_server_use_net6\6g\bvim\0" },
+    config = { "\27LJ\2\nb\0\0\2\0\4\0\t6\0\0\0009\0\1\0)\1\1\0=\1\2\0006\0\0\0009\0\1\0)\1\1\0=\1\3\0K\0\1\0\27OmniSharp_want_snippet\30OmniSharp_server_use_net6\6g\bvim\0" },
     loaded = true,
     path = "/home/sanderch/.local/share/nvim/site/pack/packer/start/omnisharp-vim",
     url = "https://github.com/OmniSharp/omnisharp-vim"
@@ -151,6 +151,11 @@ _G.packer_plugins = {
     path = "/home/sanderch/.local/share/nvim/site/pack/packer/start/telescope.nvim",
     url = "https://github.com/nvim-telescope/telescope.nvim"
   },
+  ultisnips = {
+    loaded = true,
+    path = "/home/sanderch/.local/share/nvim/site/pack/packer/start/ultisnips",
+    url = "https://github.com/SirVer/ultisnips"
+  },
   undotree = {
     loaded = true,
     path = "/home/sanderch/.local/share/nvim/site/pack/packer/start/undotree",
@@ -160,13 +165,18 @@ _G.packer_plugins = {
     loaded = true,
     path = "/home/sanderch/.local/share/nvim/site/pack/packer/start/vim-fugitive",
     url = "https://github.com/tpope/vim-fugitive"
+  },
+  ["vim-snippets"] = {
+    loaded = true,
+    path = "/home/sanderch/.local/share/nvim/site/pack/packer/start/vim-snippets",
+    url = "https://github.com/honza/vim-snippets"
   }
 }
 
 time([[Defining packer_plugins]], false)
 -- Config for: omnisharp-vim
 time([[Config for omnisharp-vim]], true)
-try_loadstring("\27LJ\2\n;\0\0\2\0\3\0\0056\0\0\0009\0\1\0)\1\1\0=\1\2\0K\0\1\0\30OmniSharp_server_use_net6\6g\bvim\0", "config", "omnisharp-vim")
+try_loadstring("\27LJ\2\nb\0\0\2\0\4\0\t6\0\0\0009\0\1\0)\1\1\0=\1\2\0006\0\0\0009\0\1\0)\1\1\0=\1\3\0K\0\1\0\27OmniSharp_want_snippet\30OmniSharp_server_use_net6\6g\bvim\0", "config", "omnisharp-vim")
 time([[Config for omnisharp-vim]], false)
 -- Config for: rose-pine
 time([[Config for rose-pine]], true)
