@@ -10,7 +10,7 @@ function setup() {
 }
 
 function draw() {
-	background(100);
+	background(1000);
 	ortho(-300, 300, -300, 300, 0, 1000);
 
 	rotateX(mouseY/100);
