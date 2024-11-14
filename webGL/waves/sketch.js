@@ -5,6 +5,7 @@ let maxD;
 
 function setup() {
 	createCanvas(400, 400, WEBGL);
+	canvas.parent('canvas-container');
 	ma = atan(1/sqrt(2));
 	maxD = dist(0,0,200,200);	
 }
