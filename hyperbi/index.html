@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Reports</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            margin: 20px;
+        }
+
+        h1, h2 {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        .slider-container, .filter-container {
+            margin: 20px 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: inline;
+        }
+
+        .rule-container {
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .rule-container label {
+            margin-right: 10px;
+        }
+
+        button {
+            background-color: #000000;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #444444;
+        }
+
+        #status {
+            margin-top: 10px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        input[type="range"] {
+            margin: 0 10px;
+        }
+
+        #chartContainer {
+            margin-top: 20px;
+        }
+
+        #savingsChart {
+            max-height: 300px;
+        }        
+        
+        #generate {
+            display: block;
+        }
+
+        #damageTypeFilter, #totalLossFilter {
+            height: 40px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Report Generator</h1>
+
+    <div id="chartContainer">
+        <canvas id="savingsChart" width="800" height="300"></canvas>
+    </div>
+
+    <div class="slider-container">
+        <label for="autoThreshold">Auto Threshold: </label>
+        <input type="range" id="autoThreshold" min="0" max="500" value="30">
+        <span id="autoValue">30</span>
+
+        <label for="internalThreshold">Internal Threshold: </label>
+        <input type="range" id="internalThreshold" min="0" max="500" value="500">
+        <span id="internalValue">500</span>
+    </div>
+
+    <div class="filter-container">
+        <label for="damageTypeFilter">Damage Type: </label>
+        <select id="damageTypeFilter" multiple>
+            <option value="Glass">Glass</option>
+            <option value="Collision">Collision</option>
+        </select>
+
+        <label for="totalLossFilter">Is Total Loss: </label>
+        <select id="totalLossFilter" multiple>
+            <option value="true">True</option>
+            <option value="false">False</option>
+        </select>
+
+        <button id="applyFilters">Apply Filters</button>
+    </div>
+
+    <div class="rule-container" id="ruleContainer">
+        <h2>Rules:</h2>
+        <div id="rulesList">
+            <!-- Rules will be dynamically rendered here -->
+        </div>
+    </div>
+
+    <button id="generate">Generate Reports</button>
+    <p id="status">Press the button to generate reports.</p>
+
+    <h2>Total Savings by Status</h2>
+    <table id="summaryTable">
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Total Savings</th>
+                <th>Report Count</th>
+                <th>Percentage</th>
+                <th>Original Total Savings</th>
+                <th>Original Report Count</th>
+                <th>Original Percentage</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <h2>Generated Reports</h2>
+    <table id="reportTable">
+        <thead>
+            <tr>
+                <th>Number</th>
+                <th>Saving</th>
+                <th>Status</th>
+                <th>Score</th>
+                <th>Broken Rules</th>
+                <th>Damage Type</th>
+                <th>Is Total Loss</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let reports = [];
+        const rules = [
+            { name: "Rule1", score: 50, included: true },
+            { name: "Rule2", score: 30, included: true },
+            { name: "Rule3", score: 20, included: true },
+            { name: "Rule4", score: 40, included: true },
+            { name: "Rule5", score: 10, included: true },
+            { name: "Rule6", score: 25, included: true },
+            { name: "Rule7", score: 35, included: true },
+            { name: "Rule8", score: 15, included: true },
+            { name: "Rule9", score: 45, included: true },
+            { name: "Rule10", score: 55, included: true }
+        ];
+
+        let originalSummary = {};
+
+        const generateReports = () => {
+            reports = [];
+
+            for (let i = 0; i < 1000; i++) {
+                const brokenRules = rules.map(rule => {
+                    return {
+                        name: rule.name,
+                        score: rule.score,
+                        isBroken: Math.random() < 0.5, // 50% chance of being broken
+                        included: rule.included
+                    };
+                });
+
+                const totalBrokenScore = brokenRules
+                    .filter(rule => rule.isBroken && rule.included) // Only include selected rules
+                    .reduce((sum, rule) => sum + rule.score, 0);
+
+                const originalSaving = Math.floor(Math.random() * 4001) - 2000; // Range from -2000 to 2000
+
+                const report = {
+                    number: `RP${Math.random().toString().slice(2, 12)}H`,
+                    saving: originalSaving,
+                    originalSaving: originalSaving, // Store the original savings
+                    score: totalBrokenScore,
+                    brokenRules: brokenRules,
+                    damageType: Math.random() < 0.5 ? "Glass" : "Collision", // Random damage type
+                    isTotalLoss: Math.random() < 0.3, // 30% chance of being total loss
+                    status: "" // Placeholder for status
+                };
+
+                reports.push(report);
+            }
+
+            // Sort reports by report number
+            reports.sort((a, b) => a.number.localeCompare(b.number));
+
+            recalculateStatuses();
+            // Save original summary data
+            originalSummary = calculateOriginalSummary();
+            updateUI();
+        };
+
+        const recalculateStatuses = () => {
+            const autoThreshold = parseInt(document.getElementById('autoThreshold').value);
+            const internalThreshold = parseInt(document.getElementById('internalThreshold').value);
+
+            reports.forEach(report => {
+                // Recalculate status and reuse the original savings for Internal and External
+                if (report.score <= autoThreshold) {
+                    report.status = "Auto";
+                    report.saving = 0; // Savings are fixed to 0 for Auto
+                } else if (report.score <= internalThreshold) {
+                    report.status = "Internal";
+                    report.saving = report.originalSaving; // Use the original savings
+                } else {
+                    report.status = "External";
+                    report.saving = report.originalSaving; // Use the original savings
+                }
+            });
+
+            updateUI();
+        };
+
+        const calculateOriginalSummary = () => {
+            const totalReports = reports.length;
+            const savingsByStatus = reports.reduce((acc, report) => {
+                if (!acc[report.status]) {
+                    acc[report.status] = { totalSavings: 0, count: 0 };
+                }
+                acc[report.status].totalSavings += report.originalSaving;
+                acc[report.status].count += 1;
+                return acc;
+            }, {});
+
+            for (const status in savingsByStatus) {
+                savingsByStatus[status].percentage = ((savingsByStatus[status].count / totalReports) * 100).toFixed(2);
+            }
+            return savingsByStatus;
+        };
+
+        const applyFilters = () => {
+            const selectedDamageTypes = Array.from(document.getElementById('damageTypeFilter').selectedOptions).map(option => option.value);
+            const selectedTotalLoss = Array.from(document.getElementById('totalLossFilter').selectedOptions).map(option => option.value === 'true');
+
+            const filteredReports = reports.filter(report =>
+                (selectedDamageTypes.length === 0 || selectedDamageTypes.includes(report.damageType)) &&
+                (selectedTotalLoss.length === 0 || selectedTotalLoss.includes(report.isTotalLoss))
+            );
+
+            updateUI(filteredReports);
+        };
+
+        const toggleRuleInclusion = (ruleName, isChecked) => {
+            const rule = rules.find(r => r.name === ruleName);
+            if (rule) {
+                rule.included = isChecked;
+                // update included rules on reports
+                reports.forEach(report => {
+                    var ruleToUpdate = report.brokenRules.find(rr => rr.name == rule.name);
+                    if (ruleToUpdate){
+                        ruleToUpdate.included = isChecked;
+                        if (isChecked){
+                            report.score = report.score + ruleToUpdate.score;
+                        } else {
+                            report.score = report.score - ruleToUpdate.score;
+                        }
+                    }
+                });
+
+                recalculateStatuses(); // Recalculate scores and statuses after rule inclusion changes
+                //plotSavingsChart(); // Update the chart
+                updateUI();
+            }
+        };
+
+        const renderRules = () => {
+            const rulesList = document.getElementById('rulesList');
+            rulesList.innerHTML = ''; // Clear existing rules
+
+            rules.forEach(rule => {
+                const label = document.createElement('label');
+                label.innerHTML = `
+                    <input type="checkbox" checked data-rule="${rule.name}" />
+                    ${rule.name}
+                `;
+                label.querySelector('input').addEventListener('change', (e) => {
+                    toggleRuleInclusion(rule.name, e.target.checked);
+                });
+                rulesList.appendChild(label);
+            });
+        };
+
+        const updateUI = (filteredReports = reports) => {
+            const totalReports = filteredReports.length;
+
+            // Group total savings and count by status
+            const savingsByStatus = filteredReports.reduce((acc, report) => {
+                if (!acc[report.status]) {
+                    acc[report.status] = { totalSavings: 0, count: 0 };
+                }
+                acc[report.status].totalSavings += report.saving;
+                acc[report.status].count += 1;
+                return acc;
+            }, {});
+
+            // Display total savings, count, and percentage by status
+            const summaryTableBody = document.getElementById('summaryTable').querySelector('tbody');
+            summaryTableBody.innerHTML = '';
+            for (const [status, data] of Object.entries(savingsByStatus)) {
+                const percentage = ((data.count / totalReports) * 100).toFixed(2);
+                const originalData = originalSummary[status] || { totalSavings: 0, count: 0, percentage: "0.00" };
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${status}</td>
+                    <td>${data.totalSavings}</td>
+                    <td>${data.count}</td>
+                    <td>${percentage}%</td>
+                    <td>${originalData.totalSavings}</td>
+                    <td>${originalData.count}</td>
+                    <td>${originalData.percentage}%</td>
+                `;
+                summaryTableBody.appendChild(row);
+            }
+
+            // Display generated reports in a table
+            const reportTableBody = document.getElementById('reportTable').querySelector('tbody');
+            reportTableBody.innerHTML = '';
+            filteredReports.forEach(report => {
+                const brokenRulesDetails = report.brokenRules
+                    .filter(rule => rule.isBroken && rule.included)
+                    .map(rule => `${rule.name} (Score: ${rule.score})`)
+                    .join(', ');
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${report.number}</td>
+                    <td>${report.saving}</td>
+                    <td>${report.status}</td>
+                    <td>${report.score}</td>
+                    <td>${brokenRulesDetails}</td>
+                    <td>${report.damageType}</td>
+                    <td>${report.isTotalLoss}</td>
+                `;
+                reportTableBody.appendChild(row);
+            });
+
+            document.getElementById('status').textContent = `Displaying ${filteredReports.length} reports.`;
+        };
+
+        const plotSavingsChart = () => {
+            const dataPoints = [];
+
+            for (let threshold = 0; threshold <= 500; threshold++) {
+                let totalSavings = 0;
+
+                reports.forEach(report => {
+                    if (report.score <= threshold) {
+                        totalSavings += 0; // Savings for Auto are 0
+                    } else {
+                        totalSavings += report.originalSaving; // Use original savings
+                    }
+                });
+
+                dataPoints.push({ x: threshold, y: totalSavings });
+            }
+
+            const ctx = document.getElementById('savingsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dataPoints.map(dp => dp.x),
+                    datasets: [{
+                        label: 'Total Savings by Auto Threshold',
+                        data: dataPoints.map(dp => dp.y),
+                        borderColor: 'blue',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.4 // Smoothing for the line
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Auto Threshold'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Total Savings'
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        document.getElementById('generate').addEventListener('click', () => {
+            generateReports();
+            renderRules();
+            plotSavingsChart();
+        });
+
+        document.getElementById('autoThreshold').addEventListener('input', (e) => {
+            document.getElementById('autoValue').textContent = e.target.value;
+            recalculateStatuses();
+            plotSavingsChart();
+        });
+
+        document.getElementById('internalThreshold').addEventListener('input', (e) => {
+            document.getElementById('internalValue').textContent = e.target.value;
+            recalculateStatuses();
+        });
+
+        document.getElementById('applyFilters').addEventListener('click', applyFilters);
+    </script>
+</body>
+</html>
