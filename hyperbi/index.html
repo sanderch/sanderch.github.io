@@ -160,7 +160,7 @@
                 <th>Saving</th>
                 <th>Status</th>
                 <th>Score</th>
-                <th>Broken Rules</th>
+                <th>Broken Rules (Score:Saving)</th>
                 <th>Damage Type</th>
                 <th>Is Total Loss</th>
             </tr>
@@ -195,15 +195,20 @@
                         name: rule.name,
                         score: rule.score,
                         isBroken: Math.random() < 0.5, // 50% chance of being broken
-                        included: rule.included
+                        included: rule.included,
+                        saving: (Math.floor(Math.random() * 401) - 200)
                     };
                 });
 
                 const totalBrokenScore = brokenRules
                     .filter(rule => rule.isBroken && rule.included) // Only include selected rules
                     .reduce((sum, rule) => sum + rule.score, 0);
+                
+                const totalBrokenSavings = brokenRules
+                    .filter(rule => rule.isBroken && rule.included) // Only include selected rules
+                    .reduce((sum, rule) => sum + rule.saving, 0);
 
-                const originalSaving = Math.floor(Math.random() * 4001) - 2000; // Range from -2000 to 2000
+                const originalSaving = totalBrokenSavings; // Math.floor(Math.random() * 4001) - 2000; // Range from -2000 to 2000
 
                 const report = {
                     number: `RP${Math.random().toString().slice(2, 12)}H`,
@@ -239,10 +244,14 @@
                     report.saving = 0; // Savings are fixed to 0 for Auto
                 } else if (report.score <= internalThreshold) {
                     report.status = "Internal";
-                    report.saving = report.originalSaving; // Use the original savings
+                    report.saving = report.brokenRules
+                        .filter(rule => rule.isBroken && rule.included) // Only include selected rules
+                        .reduce((sum, rule) => sum + rule.saving, 0);
                 } else {
                     report.status = "External";
-                    report.saving = report.originalSaving; // Use the original savings
+                    report.saving = report.brokenRules
+                        .filter(rule => rule.isBroken && rule.included) // Only include selected rules
+                        .reduce((sum, rule) => sum + rule.saving, 0);
                 }
             });
 
@@ -284,7 +293,7 @@
                 rule.included = isChecked;
                 // update included rules on reports
                 reports.forEach(report => {
-                    var ruleToUpdate = report.brokenRules.find(rr => rr.name == rule.name);
+                    var ruleToUpdate = report.brokenRules.find(rr => rr.name == rule.name && rr.isBroken);
                     if (ruleToUpdate){
                         ruleToUpdate.included = isChecked;
                         if (isChecked){
@@ -356,7 +365,7 @@
             filteredReports.forEach(report => {
                 const brokenRulesDetails = report.brokenRules
                     .filter(rule => rule.isBroken && rule.included)
-                    .map(rule => `${rule.name} (Score: ${rule.score})`)
+                    .map(rule => `${rule.name} (${rule.score}:${rule.saving})`)
                     .join(', ');
 
                 const row = document.createElement('tr');
