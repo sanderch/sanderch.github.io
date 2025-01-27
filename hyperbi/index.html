@@ -160,6 +160,9 @@
                 <th>Saving</th>
                 <th>Status</th>
                 <th>Score</th>
+                <th>Original Saving</th>
+                <th>Original Status</th>
+                <th>Original Score</th>
                 <th>Broken Rules (Score:Saving)</th>
                 <th>Damage Type</th>
                 <th>Is Total Loss</th>
@@ -213,12 +216,14 @@
                 const report = {
                     number: `RP${Math.random().toString().slice(2, 12)}H`,
                     saving: originalSaving,
-                    originalSaving: originalSaving, // Store the original savings
+                    originalSaving: originalSaving,
                     score: totalBrokenScore,
+                    originalScore: totalBrokenScore,
                     brokenRules: brokenRules,
-                    damageType: Math.random() < 0.5 ? "Glass" : "Collision", // Random damage type
-                    isTotalLoss: Math.random() < 0.3, // 30% chance of being total loss
-                    status: "" // Placeholder for status
+                    damageType: Math.random() < 0.5 ? "Glass" : "Collision",
+                    isTotalLoss: Math.random() < 0.3,
+                    status: "",
+                    originalStatus: "" // You can later set this if needed
                 };
 
                 reports.push(report);
@@ -227,10 +232,27 @@
             // Sort reports by report number
             reports.sort((a, b) => a.number.localeCompare(b.number));
 
+            setOriginalStatuses();
             recalculateStatuses();
             // Save original summary data
             originalSummary = calculateOriginalSummary();
             updateUI();
+        };
+
+        const setOriginalStatuses = () => {
+            const autoThreshold = parseInt(document.getElementById('autoThreshold').value);
+            const internalThreshold = parseInt(document.getElementById('internalThreshold').value);
+
+            reports.forEach(report => {
+                // Recalculate status and reuse the original savings for Internal and External
+                if (report.score <= autoThreshold) {
+                    report.originalStatus = "Auto";
+                } else if (report.score <= internalThreshold) {
+                    report.originalStatus = "Internal";
+                } else {
+                    report.originalStatus = "External";
+                }
+            });
         };
 
         const recalculateStatuses = () => {
@@ -376,6 +398,9 @@
                     <td>${report.saving}</td>
                     <td>${report.status}</td>
                     <td>${report.score}</td>
+                    <td>${report.originalSaving}</td>
+                    <td>${report.originalStatus || "N/A"}</td>
+                    <td>${report.originalScore || report.score}</td>
                     <td>${brokenRulesDetails}</td>
                     <td>${report.damageType}</td>
                     <td>${report.isTotalLoss}</td>
