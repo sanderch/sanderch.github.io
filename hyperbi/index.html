@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generate Reports</title>
+    <title>Audit rule value and threshold analysis</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -68,6 +68,7 @@
         }
 
         #status {
+            display: none;
             margin-top: 10px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
@@ -85,7 +86,7 @@
         }        
         
         #generate {
-            display: block;
+            display: none;
         }
 
         #damageTypeFilter, #totalLossFilter {
@@ -94,7 +95,7 @@
     </style>
 </head>
 <body>
-    <h1>Report Generator</h1>
+    <h1>Audit rule value and threshold analysis</h1>
 
     <div id="chartContainer">
         <canvas id="savingsChart" width="800" height="300"></canvas>
@@ -133,8 +134,7 @@
         </div>
     </div>
 
-    <button id="generate">Generate Reports</button>
-    <p id="status">Press the button to generate reports.</p>
+    <button id="generate">Generate Reports</button><p id="status">Press the button to generate reports.</p>
 
     <h2>Total Savings by Status</h2>
     <table id="summaryTable">
@@ -264,7 +264,9 @@
                 if (!acc[report.status]) {
                     acc[report.status] = { totalSavings: 0, count: 0 };
                 }
-                acc[report.status].totalSavings += report.originalSaving;
+                if (report.status != "Auto"){
+                    acc[report.status].totalSavings += report.originalSaving;
+                }
                 acc[report.status].count += 1;
                 return acc;
             }, {});
@@ -434,6 +436,12 @@
                 }
             });
         };
+
+        document.addEventListener("DOMContentLoaded", function(event) {
+            generateReports();
+            renderRules();
+            plotSavingsChart();
+        });
 
         document.getElementById('generate').addEventListener('click', () => {
             generateReports();
