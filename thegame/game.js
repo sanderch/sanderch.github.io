@@ -14,6 +14,15 @@ const peasants = [
   createPeasant(300, 100)
 ];
 
+const building = {
+  image: new Image(),
+  x: 400,
+  y: 300,
+  width: 122,
+  height: 107
+};
+building.image.src = 'human_citycenter.png';
+
 function createPeasant(x, y) {
   return {
     x,
@@ -37,15 +46,33 @@ function getMousePos(evt) {
   };
 }
 
-// Left-click: select a peasant
 canvas.addEventListener('mousedown', (e) => {
   if (e.button === 0) {
     const mouse = getMousePos(e);
+    let found = false;
+
     peasants.forEach(peasant => {
       const dx = mouse.x - peasant.x;
       const dy = mouse.y - peasant.y;
-      peasant.selected = Math.hypot(dx, dy) < 25;
+      const clicked = Math.hypot(dx, dy) < 25;
+
+      if (clicked) {
+        found = true;
+        if (e.shiftKey) {
+          // Toggle selection if shift is held
+          peasant.selected = !peasant.selected;
+        } else {
+          // Normal click: clear others and select only this
+          peasants.forEach(p => p.selected = false);
+          peasant.selected = true;
+        }
+      }
     });
+
+    // If clicked empty space without shift, deselect all
+    if (!found && !e.shiftKey) {
+      peasants.forEach(p => p.selected = false);
+    }
   }
 });
 
@@ -72,6 +99,18 @@ function update() {
         const dir = getDirectionIndex(angle);
         peasant.directionIndex = dir.index;
         peasant.mirrored = dir.mirrored;
+
+        const nextX = peasant.x + (dx / dist) * peasant.speed;
+        const nextY = peasant.y + (dy / dist) * peasant.speed;
+
+        if (isInsideBuilding(nextX, nextY)) {
+        // Naive detour: just step sideways slightly (e.g., perpendicular to movement)
+        const angle = Math.atan2(dy, dx);
+        const detourAngle = angle + Math.PI / 2; // 90 degrees
+        peasant.x += Math.cos(detourAngle) * peasant.speed;
+        peasant.y += Math.sin(detourAngle) * peasant.speed;
+        return; // skip frame advancement
+        }
 
         peasant.x += (dx / dist) * peasant.speed;
         peasant.y += (dy / dist) * peasant.speed;
@@ -128,7 +167,23 @@ function drawPeasant(p) {
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(
+        building.image,
+        building.x - building.width / 2,
+        building.y - building.height / 2,
+        building.width,
+        building.height
+    );
   peasants.forEach(drawPeasant);
+}
+
+function isInsideBuilding(x, y) {
+  return (
+    x > building.x - building.width / 2 &&
+    x < building.x + building.width / 2 &&
+    y > building.y - building.height / 2 &&
+    y < building.y + building.height / 2
+  );
 }
 
 function gameLoop() {
