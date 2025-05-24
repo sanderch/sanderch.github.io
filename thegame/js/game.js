@@ -6,15 +6,30 @@ const TILE_SIZE = 32;
 const GRID_WIDTH = Math.ceil(canvas.width / TILE_SIZE);
 const GRID_HEIGHT = Math.ceil(canvas.height / TILE_SIZE);
 
-const FRAME_WIDTH = 26;
-const FRAME_HEIGHT = 32;
-const FRAMES = 5;
-
 const SHOW_GRID = true;
 
+// === CHARACTER TYPES ===
+const CHARACTER_TYPES = {
+  peasant: {
+    name: 'Peasant',
+    sprite: 'img/peasant.png',
+    frameWidth: 26,
+    frameHeight: 32,
+    frames: 5,
+    speed: 1.5,
+    maxLife: 100,
+    sounds: {}, // placeholder for future sound properties
+    // Add more properties as needed
+  },
+  // Add more character types here in the future
+};
+
 // === SPRITES ===
-const peasantSprite = new Image();
-peasantSprite.src = 'img/peasant.png';
+const loadedSprites = {};
+for (const type in CHARACTER_TYPES) {
+  loadedSprites[type] = new Image();
+  loadedSprites[type].src = CHARACTER_TYPES[type].sprite;
+}
 
 const building = {
   image: new Image(),
@@ -48,23 +63,28 @@ blockBuildingOnGrid(building);
 
 // === PEASANTS ===
 const peasants = [
-  createPeasant(100, 100),
-  createPeasant(200, 150),
-  createPeasant(300, 100)
+  createCharacter('peasant', 100, 100),
+  createCharacter('peasant', 200, 150),
+  createCharacter('peasant', 300, 100)
 ];
 
-function createPeasant(x, y) {
+function createCharacter(type, x, y) {
+  const t = CHARACTER_TYPES[type];
   return {
+    type,
     x,
     y,
     path: [],
-    speed: 1.5,
+    speed: t.speed,
     selected: false,
     frame: 0,
     frameTimer: 0,
     frameInterval: 10,
     directionIndex: 0,
-    mirrored: false
+    mirrored: false,
+    life: t.maxLife,
+    maxLife: t.maxLife,
+    // Add more instance properties as needed
   };
 }
 
@@ -203,6 +223,7 @@ canvas.addEventListener('contextmenu', (e) => {
 // === UPDATE LOOP ===
 function update() {
   peasants.forEach(peasant => {
+    const t = CHARACTER_TYPES[peasant.type];
     if (peasant.path.length > 0) {
       const target = peasant.path[0];
       const dx = target.x - peasant.x;
@@ -221,12 +242,12 @@ function update() {
         peasant.directionIndex = dir.index;
         peasant.mirrored = dir.mirrored;
 
-        peasant.x += (dx / dist) * peasant.speed;
-        peasant.y += (dy / dist) * peasant.speed;
+        peasant.x += (dx / dist) * t.speed;
+        peasant.y += (dy / dist) * t.speed;
 
         peasant.frameTimer++;
         if (peasant.frameTimer >= peasant.frameInterval) {
-          peasant.frame = (peasant.frame + 1) % FRAMES;
+          peasant.frame = (peasant.frame + 1) % t.frames;
           peasant.frameTimer = 0;
         }
       } else {
@@ -285,18 +306,21 @@ function draw() {
 }
 
 function drawPeasant(p) {
-  const sx = p.directionIndex * FRAME_WIDTH;
-  const sy = p.frame * FRAME_HEIGHT;
+  // Draw any character type
+  const t = CHARACTER_TYPES[p.type];
+  const sprite = loadedSprites[p.type];
+  const sx = p.directionIndex * t.frameWidth;
+  const sy = p.frame * t.frameHeight;
   const dx = p.x;
   const dy = p.y;
 
   ctx.save();
   if (p.mirrored) {
-    ctx.translate(dx + FRAME_WIDTH / 2, dy - FRAME_HEIGHT / 2);
+    ctx.translate(dx + t.frameWidth / 2, dy - t.frameHeight / 2);
     ctx.scale(-1, 1);
-    ctx.drawImage(peasantSprite, sx, sy, FRAME_WIDTH, FRAME_HEIGHT, -FRAME_WIDTH / 2, 0, FRAME_WIDTH, FRAME_HEIGHT);
+    ctx.drawImage(sprite, sx, sy, t.frameWidth, t.frameHeight, -t.frameWidth / 2, 0, t.frameWidth, t.frameHeight);
   } else {
-    ctx.drawImage(peasantSprite, sx, sy, FRAME_WIDTH, FRAME_HEIGHT, dx - FRAME_WIDTH / 2, dy - FRAME_HEIGHT / 2, FRAME_WIDTH, FRAME_HEIGHT);
+    ctx.drawImage(sprite, sx, sy, t.frameWidth, t.frameHeight, dx - t.frameWidth / 2, dy - t.frameHeight / 2, t.frameWidth, t.frameHeight);
   }
   ctx.restore();
 
@@ -305,6 +329,15 @@ function drawPeasant(p) {
     ctx.arc(p.x, p.y + 10, 18, 0, Math.PI * 2);
     ctx.strokeStyle = 'yellow';
     ctx.stroke();
+  }
+  // Draw life bar (optional, for demonstration)
+  if (p.maxLife > 1) {
+    ctx.save();
+    ctx.fillStyle = 'red';
+    ctx.fillRect(p.x - 15, p.y - t.frameHeight / 2 - 8, 30, 4);
+    ctx.fillStyle = 'lime';
+    ctx.fillRect(p.x - 15, p.y - t.frameHeight / 2 - 8, 30 * (p.life / p.maxLife), 4);
+    ctx.restore();
   }
 }
 
