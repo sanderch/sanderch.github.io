@@ -154,7 +154,7 @@ canvas.addEventListener('contextmenu', (e) => {
         x: Math.floor(peasant.x / TILE_SIZE),
         y: Math.floor(peasant.y / TILE_SIZE)
       };
-      const tilePath = findPath(tileStart, tileEnd, grid);
+      const tilePath = findPath(tileStart, tileEnd, grid, peasant);
       peasant.path = tilePath.map(p => ({
         x: p.x * TILE_SIZE + TILE_SIZE / 2,
         y: p.y * TILE_SIZE + TILE_SIZE / 2
@@ -171,7 +171,13 @@ function update() {
       const dx = target.x - peasant.x;
       const dy = target.y - peasant.y;
       const dist = Math.hypot(dx, dy);
-
+      // Prevent moving into a tile occupied by another peasant
+      const nextTileX = Math.floor(target.x / TILE_SIZE);
+      const nextTileY = Math.floor(target.y / TILE_SIZE);
+      if (isTileOccupied(nextTileX, nextTileY, peasant)) {
+        // Wait until the tile is free
+        return;
+      }
       if (dist > peasant.speed) {
         const angle = Math.atan2(dy, dx);
         const dir = getDirectionIndex(angle);
@@ -274,7 +280,12 @@ function getNeighbors(node) {
   );
 }
 
-function findPath(start, end, grid) {
+function isTileOccupied(x, y, ignorePeasant = null) {
+  // Returns true if any peasant (except ignorePeasant) occupies the tile (x, y)
+  return peasants.some(p => p !== ignorePeasant && Math.floor(p.x / TILE_SIZE) === x && Math.floor(p.y / TILE_SIZE) === y);
+}
+
+function findPath(start, end, grid, ignorePeasant = null) {
   const startNode = {
     x: start.x,
     y: start.y,
@@ -306,7 +317,11 @@ function findPath(start, end, grid) {
     closed.add(key(current.x, current.y));
 
     getNeighbors(current).forEach(neighbor => {
-      if (closed.has(key(neighbor.x, neighbor.y)) || grid[neighbor.y][neighbor.x] === 1)
+      if (
+        closed.has(key(neighbor.x, neighbor.y)) ||
+        grid[neighbor.y][neighbor.x] === 1 ||
+        isTileOccupied(neighbor.x, neighbor.y, ignorePeasant)
+      )
         return;
 
       const g = current.g + neighbor.cost;
