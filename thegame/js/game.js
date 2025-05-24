@@ -10,6 +10,8 @@ const FRAME_WIDTH = 26;
 const FRAME_HEIGHT = 32;
 const FRAMES = 5;
 
+const SHOW_GRID = true;
+
 // === SPRITES ===
 const peasantSprite = new Image();
 peasantSprite.src = 'img/peasant.png';
@@ -143,10 +145,38 @@ canvas.addEventListener('mouseup', (e) => {
 canvas.addEventListener('contextmenu', (e) => {
   e.preventDefault();
   const mouse = getMousePos(e);
-  const tileEnd = {
+  let tileEnd = {
     x: Math.floor(mouse.x / TILE_SIZE),
     y: Math.floor(mouse.y / TILE_SIZE)
   };
+
+  // Helper to get all walkable neighbors around a blocked area
+  function getClosestWalkableNeighbor(blockedX, blockedY, peasant, fromTile) {
+    let visited = new Set();
+    let queue = [{x: blockedX, y: blockedY, dist: 0}];
+    let best = null;
+    let minDist = Infinity;
+    while (queue.length > 0) {
+      const {x, y, dist} = queue.shift();
+      const key = `${x},${y}`;
+      if (visited.has(key)) continue;
+      visited.add(key);
+      getNeighbors({x, y}).forEach(n => {
+        if (!isBlocked(n.x, n.y, peasant)) {
+          // Compute distance from original peasant position
+          const d = Math.abs(n.x - fromTile.x) + Math.abs(n.y - fromTile.y);
+          if (d < minDist) {
+            minDist = d;
+            best = {x: n.x, y: n.y};
+          }
+        } else if (!visited.has(`${n.x},${n.y}`) && grid[n.y][n.x] === 1) {
+          // If still blocked (e.g. part of a big building), keep searching
+          queue.push({x: n.x, y: n.y, dist: dist + 1});
+        }
+      });
+    }
+    return best;
+  }
 
   peasants.forEach(peasant => {
     if (peasant.selected) {
@@ -154,7 +184,14 @@ canvas.addEventListener('contextmenu', (e) => {
         x: Math.floor(peasant.x / TILE_SIZE),
         y: Math.floor(peasant.y / TILE_SIZE)
       };
-      const tilePath = findPath(tileStart, tileEnd, grid, peasant);
+      let dest = tileEnd;
+      if (isBlocked(tileEnd.x, tileEnd.y, peasant)) {
+        // Find closest walkable neighbor, even for multi-tile obstacles
+        const best = getClosestWalkableNeighbor(tileEnd.x, tileEnd.y, peasant, tileStart);
+        if (best) dest = best;
+        else return; // No reachable neighbor
+      }
+      const tilePath = findPath(tileStart, dest, grid, peasant);
       peasant.path = tilePath.map(p => ({
         x: p.x * TILE_SIZE + TILE_SIZE / 2,
         y: p.y * TILE_SIZE + TILE_SIZE / 2
@@ -203,6 +240,25 @@ function update() {
 // === DRAW ===
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw grid if enabled
+  if (SHOW_GRID) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    for (let x = 0; x <= canvas.width; x += TILE_SIZE) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= canvas.height; y += TILE_SIZE) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
 
   // Draw building
   ctx.drawImage(
@@ -285,6 +341,15 @@ function isTileOccupied(x, y, ignorePeasant = null) {
   return peasants.some(p => p !== ignorePeasant && Math.floor(p.x / TILE_SIZE) === x && Math.floor(p.y / TILE_SIZE) === y);
 }
 
+function isBlocked(x, y, peasant) {
+  // Returns true if the tile is blocked by a building, peasant, or any future obstacle
+  if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return true;
+  if (grid[y][x] === 1) return true; // Building or static obstacle
+  if (isTileOccupied(x, y, peasant)) return true; // Peasant
+  // Add more checks here for future obstacle types
+  return false;
+}
+
 function findPath(start, end, grid, ignorePeasant = null) {
   const startNode = {
     x: start.x,
@@ -317,11 +382,7 @@ function findPath(start, end, grid, ignorePeasant = null) {
     closed.add(key(current.x, current.y));
 
     getNeighbors(current).forEach(neighbor => {
-      if (
-        closed.has(key(neighbor.x, neighbor.y)) ||
-        grid[neighbor.y][neighbor.x] === 1 ||
-        isTileOccupied(neighbor.x, neighbor.y, ignorePeasant)
-      )
+      if (isBlocked(neighbor.x, neighbor.y, ignorePeasant) || closed.has(key(neighbor.x, neighbor.y)))
         return;
 
       const g = current.g + neighbor.cost;
