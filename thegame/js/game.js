@@ -12,7 +12,7 @@ const FRAMES = 5;
 
 // === SPRITES ===
 const peasantSprite = new Image();
-peasantSprite.src = 'peasant.png';
+peasantSprite.src = 'img/peasant.png';
 
 const building = {
   image: new Image(),
@@ -21,7 +21,7 @@ const building = {
   width: 122,
   height: 107
 };
-building.image.src = 'human_citycenter.png';
+building.image.src = 'img/human_citycenter.png';
 
 // === GRID ===
 const grid = Array.from({ length: GRID_HEIGHT }, () =>
