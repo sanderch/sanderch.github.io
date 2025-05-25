@@ -329,15 +329,15 @@ function drawPeasant(p) {
     ctx.arc(p.x, p.y + 10, 18, 0, Math.PI * 2);
     ctx.strokeStyle = 'yellow';
     ctx.stroke();
-  }
-  // Draw life bar (optional, for demonstration)
-  if (p.maxLife > 1) {
-    ctx.save();
-    ctx.fillStyle = 'red';
-    ctx.fillRect(p.x - 15, p.y - t.frameHeight / 2 - 8, 30, 4);
-    ctx.fillStyle = 'lime';
-    ctx.fillRect(p.x - 15, p.y - t.frameHeight / 2 - 8, 30 * (p.life / p.maxLife), 4);
-    ctx.restore();
+    // Draw life bar only if selected
+    if (p.maxLife > 1) {
+      ctx.save();
+      ctx.fillStyle = 'red';
+      ctx.fillRect(p.x - 15, p.y - t.frameHeight / 2 - 8, 30, 4);
+      ctx.fillStyle = 'lime';
+      ctx.fillRect(p.x - 15, p.y - t.frameHeight / 2 - 8, 30 * (p.life / p.maxLife), 4);
+      ctx.restore();
+    }
   }
 }
 
