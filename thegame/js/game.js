@@ -1,44 +1,15 @@
-// === CONFIGURATION ===
+// Modularized main game file
+import { TILE_SIZE, SHOW_GRID } from './config.js';
+import { CHARACTER_TYPES } from './characterTypes.js';
+import { loadedSprites } from './sprites.js';
+import { createCharacter, building } from './entities.js';
+import * as pathfinding from './pathfinding.js';
+import { isBlocked, findPath, isTileOccupied } from './pathfinding.js';
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-
-const TILE_SIZE = 32;
 const GRID_WIDTH = Math.ceil(canvas.width / TILE_SIZE);
 const GRID_HEIGHT = Math.ceil(canvas.height / TILE_SIZE);
-
-const SHOW_GRID = true;
-
-// === CHARACTER TYPES ===
-const CHARACTER_TYPES = {
-  peasant: {
-    name: 'Peasant',
-    sprite: 'img/peasant.png',
-    frameWidth: 26,
-    frameHeight: 32,
-    frames: 5,
-    speed: 1.5,
-    maxLife: 100,
-    sounds: {}, // placeholder for future sound properties
-    // Add more properties as needed
-  },
-  // Add more character types here in the future
-};
-
-// === SPRITES ===
-const loadedSprites = {};
-for (const type in CHARACTER_TYPES) {
-  loadedSprites[type] = new Image();
-  loadedSprites[type].src = CHARACTER_TYPES[type].sprite;
-}
-
-const building = {
-  image: new Image(),
-  x: 400,
-  y: 300,
-  width: 122,
-  height: 107
-};
-building.image.src = 'img/human_citycenter.png';
 
 // === GRID ===
 const grid = Array.from({ length: GRID_HEIGHT }, () =>
@@ -67,26 +38,6 @@ const peasants = [
   createCharacter('peasant', 200, 150),
   createCharacter('peasant', 300, 100)
 ];
-
-function createCharacter(type, x, y) {
-  const t = CHARACTER_TYPES[type];
-  return {
-    type,
-    x,
-    y,
-    path: [],
-    speed: t.speed,
-    selected: false,
-    frame: 0,
-    frameTimer: 0,
-    frameInterval: 10,
-    directionIndex: 0,
-    mirrored: false,
-    life: t.maxLife,
-    maxLife: t.maxLife,
-    // Add more instance properties as needed
-  };
-}
 
 // === INPUT HANDLING ===
 function getMousePos(evt) {
@@ -182,7 +133,7 @@ canvas.addEventListener('contextmenu', (e) => {
       if (visited.has(key)) continue;
       visited.add(key);
       getNeighbors({x, y}).forEach(n => {
-        if (!isBlocked(n.x, n.y, peasant)) {
+        if (!isBlocked(n.x, n.y, grid, peasants, peasant)) {
           // Compute distance from original peasant position
           const d = Math.abs(n.x - fromTile.x) + Math.abs(n.y - fromTile.y);
           if (d < minDist) {
@@ -205,13 +156,13 @@ canvas.addEventListener('contextmenu', (e) => {
         y: Math.floor(peasant.y / TILE_SIZE)
       };
       let dest = tileEnd;
-      if (isBlocked(tileEnd.x, tileEnd.y, peasant)) {
+      if (isBlocked(tileEnd.x, tileEnd.y, grid, peasants, peasant)) {
         // Find closest walkable neighbor, even for multi-tile obstacles
         const best = getClosestWalkableNeighbor(tileEnd.x, tileEnd.y, peasant, tileStart);
         if (best) dest = best;
         else return; // No reachable neighbor
       }
-      const tilePath = findPath(tileStart, dest, grid, peasant);
+      const tilePath = findPath(tileStart, dest, grid, peasants, peasant);
       peasant.path = tilePath.map(p => ({
         x: p.x * TILE_SIZE + TILE_SIZE / 2,
         y: p.y * TILE_SIZE + TILE_SIZE / 2
@@ -219,6 +170,19 @@ canvas.addEventListener('contextmenu', (e) => {
     }
   });
 });
+
+function getDirectionIndex(angle) {
+  const deg = angle * (180 / Math.PI);
+  if (deg >= -22.5 && deg < 22.5) return { index: 2, mirrored: false }; // Right
+  if (deg >= 22.5 && deg < 67.5) return { index: 3, mirrored: false }; // Down-Right
+  if (deg >= 67.5 && deg < 112.5) return { index: 4, mirrored: false }; // Down
+  if (deg >= 112.5 && deg < 157.5) return { index: 3, mirrored: true }; // Down-Left
+  if (deg >= 157.5 || deg < -157.5) return { index: 2, mirrored: true }; // Left
+  if (deg >= -157.5 && deg < -112.5) return { index: 1, mirrored: true }; // Up-Left
+  if (deg >= -112.5 && deg < -67.5) return { index: 0, mirrored: false }; // Up
+  if (deg >= -67.5 && deg < -22.5) return { index: 1, mirrored: false }; // Up-Right
+  return { index: 2, mirrored: false };
+}
 
 // === UPDATE LOOP ===
 function update() {
@@ -232,7 +196,7 @@ function update() {
       // Prevent moving into a tile occupied by another peasant
       const nextTileX = Math.floor(target.x / TILE_SIZE);
       const nextTileY = Math.floor(target.y / TILE_SIZE);
-      if (isTileOccupied(nextTileX, nextTileY, peasant)) {
+      if (isTileOccupied(nextTileX, nextTileY, peasants, peasant)) {
         // Wait until the tile is free
         return;
       }
@@ -341,114 +305,11 @@ function drawPeasant(p) {
   }
 }
 
+// Main game loop (will call update/draw from modules)
 function gameLoop() {
   update();
   draw();
   requestAnimationFrame(gameLoop);
-}
-
-// === PATHFINDING ===
-function heuristic(a, b) {
-  const dx = Math.abs(a.x - b.x);
-  const dy = Math.abs(a.y - b.y);
-  return dx + dy + (Math.SQRT2 - 2) * Math.min(dx, dy);
-}
-
-function getNeighbors(node) {
-  const dirs = [
-    [0, -1], [1, 0], [0, 1], [-1, 0],
-    [-1, -1], [1, -1], [1, 1], [-1, 1]
-  ];
-  return dirs.map(([dx, dy]) => ({
-    x: node.x + dx,
-    y: node.y + dy,
-    cost: dx !== 0 && dy !== 0 ? Math.SQRT2 : 1
-  })).filter(n =>
-    n.x >= 0 && n.x < GRID_WIDTH &&
-    n.y >= 0 && n.y < GRID_HEIGHT
-  );
-}
-
-function isTileOccupied(x, y, ignorePeasant = null) {
-  // Returns true if any peasant (except ignorePeasant) occupies the tile (x, y)
-  return peasants.some(p => p !== ignorePeasant && Math.floor(p.x / TILE_SIZE) === x && Math.floor(p.y / TILE_SIZE) === y);
-}
-
-function isBlocked(x, y, peasant) {
-  // Returns true if the tile is blocked by a building, peasant, or any future obstacle
-  if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return true;
-  if (grid[y][x] === 1) return true; // Building or static obstacle
-  if (isTileOccupied(x, y, peasant)) return true; // Peasant
-  // Add more checks here for future obstacle types
-  return false;
-}
-
-function findPath(start, end, grid, ignorePeasant = null) {
-  const startNode = {
-    x: start.x,
-    y: start.y,
-    g: 0,
-    h: heuristic(start, end),
-    f: 0,
-    parent: null
-  };
-  startNode.f = startNode.g + startNode.h;
-
-  const open = [startNode];
-  const closed = new Set();
-  const key = (x, y) => `${x},${y}`;
-
-  while (open.length > 0) {
-    open.sort((a, b) => a.f - b.f);
-    const current = open.shift();
-
-    if (current.x === end.x && current.y === end.y) {
-      const path = [];
-      let node = current;
-      while (node) {
-        path.unshift({ x: node.x, y: node.y });
-        node = node.parent;
-      }
-      return path;
-    }
-
-    closed.add(key(current.x, current.y));
-
-    getNeighbors(current).forEach(neighbor => {
-      if (isBlocked(neighbor.x, neighbor.y, ignorePeasant) || closed.has(key(neighbor.x, neighbor.y)))
-        return;
-
-      const g = current.g + neighbor.cost;
-      const h = heuristic(neighbor, end);
-      const existing = open.find(n => n.x === neighbor.x && n.y === neighbor.y);
-
-      if (!existing || g + h < existing.f) {
-        const n = {
-          ...neighbor,
-          g,
-          h,
-          f: g + h,
-          parent: current
-        };
-        if (!existing) open.push(n);
-      }
-    });
-  }
-
-  return []; // no path
-}
-
-function getDirectionIndex(angle) {
-  const deg = angle * (180 / Math.PI);
-  if (deg >= -22.5 && deg < 22.5) return { index: 2, mirrored: false }; // Right
-  if (deg >= 22.5 && deg < 67.5) return { index: 3, mirrored: false }; // Down-Right
-  if (deg >= 67.5 && deg < 112.5) return { index: 4, mirrored: false }; // Down
-  if (deg >= 112.5 && deg < 157.5) return { index: 3, mirrored: true }; // Down-Left
-  if (deg >= 157.5 || deg < -157.5) return { index: 2, mirrored: true }; // Left
-  if (deg >= -157.5 && deg < -112.5) return { index: 1, mirrored: true }; // Up-Left
-  if (deg >= -112.5 && deg < -67.5) return { index: 0, mirrored: false }; // Up
-  if (deg >= -67.5 && deg < -22.5) return { index: 1, mirrored: false }; // Up-Right
-  return { index: 2, mirrored: false };
 }
 
 gameLoop();
