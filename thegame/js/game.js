@@ -6,6 +6,7 @@ import { createCharacter, building } from './entities.js';
 import * as pathfinding from './pathfinding.js';
 import { isBlocked, findPath, isTileOccupied } from './pathfinding.js';
 import { getDirectionIndex } from './direction.js';
+import { getNeighbors } from './pathfinding.js';
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -133,7 +134,7 @@ canvas.addEventListener('contextmenu', (e) => {
       const key = `${x},${y}`;
       if (visited.has(key)) continue;
       visited.add(key);
-      getNeighbors({x, y}).forEach(n => {
+      getNeighbors({x, y}, GRID_WIDTH, GRID_HEIGHT).forEach(n => {
         if (!isBlocked(n.x, n.y, grid, peasants, peasant)) {
           // Compute distance from original peasant position
           const d = Math.abs(n.x - fromTile.x) + Math.abs(n.y - fromTile.y);
@@ -161,7 +162,8 @@ canvas.addEventListener('contextmenu', (e) => {
         // Find closest walkable neighbor, even for multi-tile obstacles
         const best = getClosestWalkableNeighbor(tileEnd.x, tileEnd.y, peasant, tileStart);
         if (best) dest = best;
-        else return; // No reachable neighbor
+        // If no walkable neighbor, still allow moving to the blocked tile (for interaction)
+        // else return; // No reachable neighbor
       }
       const tilePath = findPath(tileStart, dest, grid, peasants, peasant);
       peasant.path = tilePath.map(p => ({
