@@ -21,10 +21,25 @@ This project is a browser-based real-time strategy (RTS) game prototype. It feat
   - `render.js` – Rendering functions
   - `game.js` – Main game loop and glue code
 - `img/` – Image assets
+- `tests/` – Automated test files
 
 ## How to Run
 
 Open `index.html` in your browser. Make sure to use a local server or enable CORS if you encounter image loading issues.
+
+## How to Run Tests
+
+1. Make sure you have [Node.js](https://nodejs.org/) installed.
+2. Install dependencies (only needed once):
+   ```bash
+   npm install
+   ```
+3. Run the test suite:
+   ```bash
+   npm test
+   ```
+
+This will run all tests in the `tests/` directory using Jest. The test environment is configured to work with ES modules and browser-like globals.
 
 ## Future Extensions
 - Add more unit/building types
