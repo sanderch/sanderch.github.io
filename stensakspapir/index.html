@@ -124,6 +124,55 @@
         .draw {
             color: #f59e0b;
         }
+
+        .stats {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e5e5e5;
+        }
+
+        .stats h2 {
+            color: #333;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+        }
+
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            gap: 15px;
+        }
+
+        .stat-item {
+            flex: 1;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+
+        .stat-item.wins {
+            border: 2px solid #22c55e;
+        }
+
+        .stat-item.losses {
+            border: 2px solid #ef4444;
+        }
+
+        .stat-item.draws {
+            border: 2px solid #f59e0b;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -141,11 +190,34 @@
         <div class="result" id="result"></div>
         
         <button class="retry-btn" id="retryBtn" onclick="retry()">Spil igen</button>
+        
+        <div class="stats">
+            <h2>Statistik</h2>
+            <div class="stats-grid">
+                <div class="stat-item wins">
+                    <div class="stat-label">Vundet</div>
+                    <div class="stat-value" id="winsCount">0</div>
+                </div>
+                <div class="stat-item draws">
+                    <div class="stat-label">Uafgjort</div>
+                    <div class="stat-value" id="drawsCount">0</div>
+                </div>
+                <div class="stat-item losses">
+                    <div class="stat-label">Tabt</div>
+                    <div class="stat-value" id="lossesCount">0</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
         let countdownInterval;
         let gameActive = false;
+        let stats = {
+            wins: 0,
+            losses: 0,
+            draws: 0
+        };
 
         const choices = ['rock', 'paper', 'scissors'];
         const choiceNames = {
@@ -212,13 +284,18 @@
             if (result === 'win') {
                 resultText = 'Du vandt! 🎉';
                 resultClass = 'win';
+                stats.wins++;
             } else if (result === 'lose') {
                 resultText = 'Du tabte! 😢';
                 resultClass = 'lose';
+                stats.losses++;
             } else {
                 resultText = 'Uafgjort! 🤝';
                 resultClass = 'draw';
+                stats.draws++;
             }
+            
+            updateStats();
             
             countdownEl.textContent = '';
             resultEl.innerHTML = `
@@ -235,6 +312,12 @@
             document.querySelectorAll('.choice').forEach(btn => {
                 btn.disabled = disabled;
             });
+        }
+
+        function updateStats() {
+            document.getElementById('winsCount').textContent = stats.wins;
+            document.getElementById('lossesCount').textContent = stats.losses;
+            document.getElementById('drawsCount').textContent = stats.draws;
         }
 
         function retry() {
