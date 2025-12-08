@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sten Saks Papir</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .countdown {
+            font-size: 4em;
+            color: #667eea;
+            font-weight: bold;
+            margin: 30px 0;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .choices {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+            gap: 15px;
+        }
+
+        .choice {
+            background: #f0f0f0;
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            padding: 20px;
+            font-size: 3em;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+        }
+
+        .choice:hover:not(:disabled) {
+            background: #667eea;
+            transform: scale(1.1);
+        }
+
+        .choice:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin: 30px 0;
+            font-size: 1.5em;
+            min-height: 80px;
+        }
+
+        .result-text {
+            color: #333;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .choices-display {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .retry-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: none;
+        }
+
+        .retry-btn:hover {
+            background: #764ba2;
+            transform: scale(1.05);
+        }
+
+        .retry-btn.show {
+            display: inline-block;
+        }
+
+        .win {
+            color: #22c55e;
+        }
+
+        .lose {
+            color: #ef4444;
+        }
+
+        .draw {
+            color: #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🪨 Sten Saks Papir ✂️</h1>
+        
+        <div class="countdown" id="countdown"></div>
+        
+        <div class="choices">
+            <button class="choice" id="rock" onclick="playerChoice('rock')">🪨</button>
+            <button class="choice" id="paper" onclick="playerChoice('paper')">📄</button>
+            <button class="choice" id="scissors" onclick="playerChoice('scissors')">✂️</button>
+        </div>
+        
+        <div class="result" id="result"></div>
+        
+        <button class="retry-btn" id="retryBtn" onclick="retry()">Spil igen</button>
+    </div>
+
+    <script>
+        let countdownInterval;
+        let gameActive = false;
+
+        const choices = ['rock', 'paper', 'scissors'];
+        const choiceNames = {
+            rock: 'Sten 🪨',
+            paper: 'Papir 📄',
+            scissors: 'Saks ✂️'
+        };
+
+        function startCountdown() {
+            gameActive = true;
+            disableButtons(false);
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('retryBtn').classList.remove('show');
+            
+            let count = 3;
+            const countdownEl = document.getElementById('countdown');
+            countdownEl.textContent = count;
+            
+            countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownEl.textContent = count;
+                } else {
+                    clearInterval(countdownInterval);
+                    countdownEl.textContent = 'VÆLG NU!';
+                }
+            }, 1000);
+        }
+
+        function playerChoice(choice) {
+            if (!gameActive) return;
+            
+            clearInterval(countdownInterval);
+            gameActive = false;
+            disableButtons(true);
+            
+            const computerChoice = choices[Math.floor(Math.random() * choices.length)];
+            const result = determineWinner(choice, computerChoice);
+            
+            displayResult(choice, computerChoice, result);
+        }
+
+        function determineWinner(player, computer) {
+            if (player === computer) return 'draw';
+            
+            if (
+                (player === 'rock' && computer === 'scissors') ||
+                (player === 'paper' && computer === 'rock') ||
+                (player === 'scissors' && computer === 'paper')
+            ) {
+                return 'win';
+            }
+            
+            return 'lose';
+        }
+
+        function displayResult(playerChoice, computerChoice, result) {
+            const resultEl = document.getElementById('result');
+            const countdownEl = document.getElementById('countdown');
+            
+            let resultText = '';
+            let resultClass = '';
+            
+            if (result === 'win') {
+                resultText = 'Du vandt! 🎉';
+                resultClass = 'win';
+            } else if (result === 'lose') {
+                resultText = 'Du tabte! 😢';
+                resultClass = 'lose';
+            } else {
+                resultText = 'Uafgjort! 🤝';
+                resultClass = 'draw';
+            }
+            
+            countdownEl.textContent = '';
+            resultEl.innerHTML = `
+                <div class="result-text ${resultClass}">${resultText}</div>
+                <div class="choices-display">
+                    Du: ${choiceNames[playerChoice]} | Computer: ${choiceNames[computerChoice]}
+                </div>
+            `;
+            
+            document.getElementById('retryBtn').classList.add('show');
+        }
+
+        function disableButtons(disabled) {
+            document.querySelectorAll('.choice').forEach(btn => {
+                btn.disabled = disabled;
+            });
+        }
+
+        function retry() {
+            startCountdown();
+        }
+
+        // Start the game when page loads
+        window.onload = () => {
+            startCountdown();
+        };
+    </script>
+</body>
+</html>
