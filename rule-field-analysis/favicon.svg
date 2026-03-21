@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Background -->
+  <rect width="32" height="32" rx="6" fill="#3f4a6b"/>
+
+  <!-- Left column: two "rule" nodes -->
+  <rect x="4" y="7" width="8" height="5" rx="1.5" fill="#7b9ee8"/>
+  <rect x="4" y="20" width="8" height="5" rx="1.5" fill="#7b9ee8"/>
+
+  <!-- Right column: three "field" nodes -->
+  <rect x="20" y="4"  width="8" height="4" rx="1.5" fill="#4caf50"/>
+  <rect x="20" y="14" width="8" height="4" rx="1.5" fill="#4caf50"/>
+  <rect x="20" y="24" width="8" height="4" rx="1.5" fill="#4caf50"/>
+
+  <!-- Connecting lines (rule1 → field1, rule1 → field2, rule2 → field2, rule2 → field3) -->
+  <line x1="12" y1="9.5"  x2="20" y2="6"    stroke="#aac4f5" stroke-width="1.2" stroke-dasharray="2,1"/>
+  <line x1="12" y1="9.5"  x2="20" y2="16"   stroke="#aac4f5" stroke-width="1.2" stroke-dasharray="2,1"/>
+  <line x1="12" y1="22.5" x2="20" y2="16"   stroke="#aac4f5" stroke-width="1.2" stroke-dasharray="2,1"/>
+  <line x1="12" y1="22.5" x2="20" y2="26"   stroke="#aac4f5" stroke-width="1.2" stroke-dasharray="2,1"/>
+</svg>

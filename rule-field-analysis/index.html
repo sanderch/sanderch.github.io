@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Rule–Field Dependency Analyzer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 1.5rem 2rem; background: #f5f7fa; color: #222; }
+  h1 { margin: 0 0 1.25rem; font-size: 1.4rem; }
+
+  .upload-row { display: flex; gap: .6rem; margin-bottom: .75rem; }
+  .drop-zone { flex: 1; border: 2px dashed #aab; border-radius: 6px; background: #fff;
+               transition: border-color .2s, background .2s; overflow: hidden; }
+  .drop-zone label { display: flex; flex-direction: row; align-items: center;
+                     gap: .6rem; padding: .5rem .75rem; cursor: pointer;
+                     width: 100%; height: 100%; }
+  .drop-zone input[type=file] { display: none; }
+  .drop-zone .icon { font-size: 1.1rem; flex-shrink: 0; }
+  .drop-zone .title { font-weight: 600; margin: 0; font-size: .82rem; flex: 1;
+                      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .drop-zone small { color: #888; font-size: .75rem; flex-shrink: 0; }
+  .drop-zone .btn { flex-shrink: 0; padding: .2rem .6rem; background: #e0e4f0;
+                    border-radius: 4px; font-size: .78rem; white-space: nowrap; }
+  .drop-zone.drag-over { border-color: #2196f3; background: #e8f4ff; }
+  .drop-zone.ready { border-color: #4caf50; background: #f0fff4; }
+  .drop-zone.ready .icon::after { content: '✓'; }
+  .drop-zone:not(.ready) .icon::after { content: '📄'; }
+
+  #status { min-height: 1.2rem; color: #c0392b; font-size: .88rem; margin-bottom: .5rem; }
+
+  #controls { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: .75rem; }
+  #filter { padding: .4rem .7rem; border: 1px solid #ccc; border-radius: 4px;
+            font-size: .95rem; width: 320px; }
+  #stats { color: #555; font-size: .88rem; }
+  button { padding: .4rem .9rem; border: none; border-radius: 4px; cursor: pointer;
+           font-size: .88rem; background: #3f7be0; color: #fff; }
+  button:hover { background: #2f65c4; }
+
+  #table-wrap { overflow: auto; max-height: calc(100vh - 280px); background: #fff;
+                border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+  table { border-collapse: collapse; width: 100%; font-size: .82rem; }
+  thead th { position: sticky; top: 0; background: #3f4a6b; color: #fff;
+             padding: .45rem .7rem; text-align: left; white-space: nowrap;
+             user-select: none; }
+  tbody tr:nth-child(even) { background: #f8f9fc; }
+  tbody tr:hover { background: #e8edff; }
+  td { padding: .32rem .7rem; border-bottom: 1px solid #eee; vertical-align: top;
+       max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  td:first-child { max-width: 300px; }
+
+  .hidden { display: none; }
+
+  /* ── Column filter dropdowns ── */
+  .col-filter-btn { background: none; border: none; color: #ccd; cursor: pointer;
+                    font-size: .75rem; padding: 0 0 0 .3rem; line-height: 1; vertical-align: middle; }
+  .col-filter-btn:hover { color: #fff; background: none; }
+  th.has-filter { background: #2d5aa0; }
+  th.has-filter .col-filter-btn { color: #ffd700; }
+
+  .col-dropdown { position: absolute; background: #fff; border: 1px solid #ccc;
+                  border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.18);
+                  z-index: 1000; min-width: 220px; max-width: 340px;
+                  display: flex; flex-direction: column; font-size: .85rem; }
+  .dd-header { padding: .5rem; border-bottom: 1px solid #eee; }
+  .dd-search { width: 100%; padding: .3rem .5rem; border: 1px solid #ccc;
+               border-radius: 4px; font-size: .84rem; }
+  .dd-actions { padding: .4rem .7rem; border-bottom: 1px solid #eee; }
+  .dd-all { display: flex; align-items: center; gap: .4rem; cursor: pointer; }
+  .dd-list { overflow-y: auto; max-height: 220px; padding: .25rem 0; }
+  .dd-item { display: flex; align-items: center; gap: .5rem; padding: .22rem .7rem; cursor: pointer; }
+  .dd-item:hover { background: #f0f4ff; }
+  .dd-item input { cursor: pointer; }
+  .dd-footer { display: flex; gap: .5rem; padding: .5rem .7rem;
+               border-top: 1px solid #eee; justify-content: flex-end; }
+  .dd-footer button { padding: .28rem .7rem; font-size: .82rem; }
+  .dd-footer .dd-clear { background: #e8eaf0; color: #333; }
+  .dd-footer .dd-clear:hover { background: #d0d4e0; }
+</style>
+</head>
+<body>
+
+<h1>Rule–Field Dependency Analyzer</h1>
+
+<div class="upload-row">
+  <div class="drop-zone" id="zone-env">
+    <label>
+      <span class="icon"></span>
+      <p class="title">EnvironmentConfigurationSetting.xml</p>
+      <small>base64 TechnicalModel</small>
+      <span class="btn">Browse…</span>
+      <input type="file" id="file-env" accept=".xml">
+    </label>
+  </div>
+  <div class="drop-zone" id="zone-fields">
+    <label>
+      <span class="icon"></span>
+      <p class="title">Fields configuration.xml</p>
+      <small>field definitions</small>
+      <span class="btn">Browse…</span>
+      <input type="file" id="file-fields" accept=".xml">
+    </label>
+  </div>
+</div>
+
+<div id="status"></div>
+
+<div id="controls" class="hidden">
+  <input type="text" id="filter" placeholder="Filter any column…">
+  <button id="btn-csv">⬇ Download CSV</button>
+  <span id="stats"></span>
+</div>
+
+<div id="table-wrap" class="hidden"></div>
+
+<script>
+'use strict';
+
+const COLS = ['RuleName','FieldName','CheckedValues','ATRecord','ATRecordIndex','FieldType','FieldGroup','Category'];
+
+let state      = { envXml: null, fieldsXml: null };
+let allRows    = [];
+let colFilters = {};
+
+// ── Regex patterns (same as Python script) ────────────────────────────────────
+const RE_REPORT       = /@Report\(([A-Za-z0-9._]+_\d+)(?:,([^)]+(?:\([^)]*\)[^)]*)*))?\)/g;
+const RE_REPORT_MULTI = /@ReportMulti\(([A-Za-z0-9._]+),function\((\w+)\),outputIndex\((\d+)\),keyValues\(((?:[^()]*|\([^()]*\))*)\)/g;
+const RE_INCL_VALS    = /includedValues\(([^)]*)/;
+
+// ── File loading ──────────────────────────────────────────────────────────────
+function setupZone(zoneId, inputId, stateKey) {
+  const zone  = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+
+  input.addEventListener('change', e => {
+    if (e.target.files[0]) loadXml(e.target.files[0], stateKey, zone);
+  });
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) loadXml(e.dataTransfer.files[0], stateKey, zone);
+  });
+}
+
+function loadXml(file, stateKey, zone) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const doc = parseXml(e.target.result);
+      state[stateKey] = doc;
+      zone.classList.add('ready');
+      zone.querySelector('.title').textContent = file.name;
+      setStatus('');
+      if (state.envXml && state.fieldsXml) {
+        setStatus('Analyzing…');
+        setTimeout(runAnalysis, 20);
+      }
+    } catch(err) {
+      setStatus('Error loading ' + file.name + ': ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function parseXml(text) {
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  const err = doc.getElementsByTagName('parsererror')[0];
+  if (err) throw new Error(err.textContent.slice(0, 300));
+  return doc;
+}
+
+// ── Field maps ────────────────────────────────────────────────────────────────
+function childElements(el, tagName) {
+  return Array.from(el.childNodes).filter(n => n.nodeType === 1 && n.localName === tagName);
+}
+
+function buildFieldMaps(fieldsDoc) {
+  const singleMap = {};
+  const multiMap  = {};
+
+  const singleSecs = fieldsDoc.getElementsByTagName('SingleInstanceReportFields');
+  if (singleSecs.length) {
+    for (const f of childElements(singleSecs[0], 'Field')) {
+      const rec   = f.getAttribute('ATRecord') || '';
+      const idx   = f.getAttribute('ATRecordIndex') || '';
+      const ftype = f.getAttribute('type') || '';
+      const enumItems = {};
+      if (ftype === 'Enumeration') {
+        const itemsEl = f.getElementsByTagName('Items')[0];
+        if (itemsEl) {
+          for (const item of itemsEl.getElementsByTagName('Item')) {
+            enumItems[item.getAttribute('key')] = item.getAttribute('value');
+          }
+        }
+      }
+      singleMap[`${rec}_${idx}`] = {
+        name: f.getAttribute('name') || '',
+        ATRecord: rec, ATRecordIndex: idx,
+        group: f.getAttribute('group') || '',
+        field_type: ftype, enum_items: enumItems,
+      };
+    }
+  }
+
+  const multiSecs = fieldsDoc.getElementsByTagName('MultiInstanceReportFields');
+  if (multiSecs.length) {
+    for (const cat of childElements(multiSecs[0], 'Category')) {
+      const catRecord = cat.getAttribute('ATRecord') || '';
+      const catFields = {};
+      const fieldsEl  = cat.getElementsByTagName('Fields')[0];
+      if (fieldsEl) {
+        for (const f of childElements(fieldsEl, 'Field')) {
+          catFields[f.getAttribute('ATRecordIndex')] = f.getAttribute('name');
+        }
+      }
+      multiMap[catRecord] = { cat_name: cat.getAttribute('name') || '', fields: catFields };
+    }
+  }
+
+  return { singleMap, multiMap };
+}
+
+// ── Reference resolution ──────────────────────────────────────────────────────
+function resolveSingle(key, singleMap) {
+  const info = singleMap[key];
+  if (info) return info;
+  const i = key.lastIndexOf('_');
+  return { name: `[unknown: ${key}]`, ATRecord: i >= 0 ? key.slice(0, i) : key,
+           ATRecordIndex: i >= 0 ? key.slice(i + 1) : '?', group: '', field_type: '', enum_items: {} };
+}
+
+function resolveCheckedValues(paramStr, info) {
+  if (!paramStr || info.field_type !== 'Enumeration') return '';
+  const m = RE_INCL_VALS.exec(paramStr);
+  if (!m || !m[1]) return '';
+  return m[1].split(';').map(k => {
+    k = k.trim();
+    if (!k) return null;
+    const label = info.enum_items[k];
+    if (!label) return k;                      // key not in enum: show raw key
+    return label !== k ? `${k}=${label}` : label; // differ: key=value, same: value once
+  }).filter(Boolean).join('; ');
+}
+
+function resolveMulti(atRecord, outputIdxStr, multiMap) {
+  const cat = multiMap[atRecord];
+  if (!cat) return { catName: `[unknown: ${atRecord}]`, fieldName: '[unknown]', atIdx: '?' };
+  const atIdx = String(parseInt(outputIdxStr, 10) + 1);
+  return { catName: cat.cat_name, fieldName: cat.fields[atIdx] || `[unknown field ${atIdx}]`, atIdx };
+}
+
+function extractRefs(ruleText, singleMap, multiMap) {
+  const refs = [];
+  const seen = new Set();
+  RE_REPORT.lastIndex = 0;
+  RE_REPORT_MULTI.lastIndex = 0;
+
+  let m;
+  while ((m = RE_REPORT.exec(ruleText)) !== null) {
+    const key = m[1];
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const info = resolveSingle(key, singleMap);
+    refs.push({
+      type: 'single', name: info.name, ATRecord: info.ATRecord,
+      ATRecordIndex: info.ATRecordIndex, group: info.group,
+      field_type: info.field_type, category: '',
+      checked_values: resolveCheckedValues(m[2] || '', info),
+    });
+  }
+
+  while ((m = RE_REPORT_MULTI.exec(ruleText)) !== null) {
+    const { catName, fieldName, atIdx } = resolveMulti(m[1], m[3], multiMap);
+    const key = `${m[1]}[${atIdx}]`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    refs.push({
+      type: 'multi', name: fieldName, ATRecord: m[1], ATRecordIndex: atIdx,
+      group: '', field_type: 'multi', category: catName, checked_values: '',
+    });
+  }
+
+  return refs;
+}
+
+// ── Base64 decode ─────────────────────────────────────────────────────────────
+function decodeBase64Xml(b64) {
+  const clean  = b64.replace(/\s+/g, '');
+  const binary = atob(clean);
+  const bytes  = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder('utf-8').decode(bytes);
+}
+
+// ── Main analysis ─────────────────────────────────────────────────────────────
+function runAnalysis() {
+  try {
+    const b64Els = state.envXml.getElementsByTagName('TechnicalModel64String');
+    if (!b64Els.length) throw new Error('"TechnicalModel64String" element not found in EnvironmentConfigurationSetting.xml');
+
+    const techDoc = parseXml(decodeBase64Xml(b64Els[0].textContent));
+    const { singleMap, multiMap } = buildFieldMaps(state.fieldsXml);
+
+    const serializer = new XMLSerializer();
+    const rows = [];
+
+    for (const ruleEl of Array.from(techDoc.getElementsByTagName('Rule'))) {
+      const ruleName = ruleEl.getAttribute('name') || '';
+      const ruleText = serializer.serializeToString(ruleEl);
+      for (const ref of extractRefs(ruleText, singleMap, multiMap)) {
+        rows.push({
+          RuleName: ruleName, FieldName: ref.name,
+          ATRecord: ref.ATRecord, ATRecordIndex: ref.ATRecordIndex,
+          FieldType: ref.type, FieldGroup: ref.group,
+          Category: ref.category, CheckedValues: ref.checked_values,
+        });
+      }
+    }
+
+    allRows    = rows;
+    colFilters = {};
+    setStatus('');
+    document.getElementById('controls').classList.remove('hidden');
+    document.getElementById('table-wrap').classList.remove('hidden');
+    applyFilters();
+  } catch(err) {
+    setStatus('Analysis error: ' + err.message);
+    console.error(err);
+  }
+}
+
+// ── Filtering ───────────────────────────────────────────────────────────────
+function getFilteredRows() {
+  const q = document.getElementById('filter').value.trim().toLowerCase();
+  let rows = allRows;
+  if (q) rows = rows.filter(row => COLS.some(c => (row[c] || '').toLowerCase().includes(q)));
+  for (const [col, vals] of Object.entries(colFilters)) {
+    if (vals && vals.size > 0) rows = rows.filter(row => vals.has(row[col] || ''));
+  }
+  return rows;
+}
+
+function applyFilters() {
+  const rows = getFilteredRows();
+  renderTable(rows);
+  updateStats(rows);
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────
+function renderTable(rows) {
+  const wrap = document.getElementById('table-wrap');
+  if (!rows.length) {
+    wrap.innerHTML = '<p style="padding:1rem;color:#888">No matching rows.</p>';
+    return;
+  }
+  const thCells = COLS.map(c => {
+    const active = colFilters[c] && colFilters[c].size > 0;
+    return `<th${active ? ' class="has-filter"' : ''} data-col="${esc(c)}">${esc(c)}<button class="col-filter-btn" data-col="${esc(c)}">&#9660;</button></th>`;
+  }).join('');
+  const thead = `<thead><tr>${thCells}</tr></thead>`;
+  const tbody = rows.map(row =>
+    `<tr>${COLS.map(c => `<td title="${esc(row[c] || '')}">${esc(row[c] || '')}</td>`).join('')}</tr>`
+  ).join('');
+  wrap.innerHTML = `<table>${thead}<tbody>${tbody}</tbody></table>`;
+  wrap.querySelectorAll('.col-filter-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      openDropdown(btn.dataset.col, btn.closest('th'));
+    });
+  });
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function updateStats(rows) {
+  document.getElementById('stats').textContent =
+    `${rows.length} rows · ${new Set(rows.map(r => r.RuleName)).size} rules · `+
+    `${new Set(rows.map(r => r.FieldName)).size} fields`;
+}
+
+// ── Filter ────────────────────────────────────────────────────────────────────
+document.getElementById('filter').addEventListener('input', applyFilters);
+
+// ── CSV export ────────────────────────────────────────────────────────────────
+document.getElementById('btn-csv').addEventListener('click', () => {
+  const rows = getFilteredRows();
+  const csv = '\uFEFF' + [
+    COLS.join(','),
+    ...rows.map(row => COLS.map(c => csvCell(row[c] || '')).join(','))
+  ].join('\r\n');
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })),
+    download: 'rule_field_dependencies.csv',
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+function csvCell(v) {
+  return (v.includes(',') || v.includes('"') || v.includes('\n'))
+    ? '"' + v.replace(/"/g, '""') + '"' : v;
+}
+// ── Column filter dropdown ────────────────────────────────────────────────
+let _dropdown = null;
+
+function openDropdown(col, thEl) {
+  closeDropdown();
+  const allVals = [...new Set(allRows.map(r => r[col] || ''))].sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true })
+  );
+  const activeSet  = colFilters[col];
+  const noneActive = !activeSet || activeSet.size === 0;
+
+  const listItems = allVals.map(v => {
+    const checked = noneActive || (activeSet && activeSet.has(v));
+    const label   = v ? esc(v) : '<em style="color:#999">(empty)</em>';
+    return `<label class="dd-item"><input type="checkbox" value="${esc(v)}"${checked ? ' checked' : ''}><span>${label}</span></label>`;
+  }).join('');
+
+  const dd = document.createElement('div');
+  dd.className = 'col-dropdown';
+  dd.innerHTML = `
+    <div class="dd-header"><input class="dd-search" type="text" placeholder="Search values…"></div>
+    <div class="dd-actions">
+      <label class="dd-all"><input type="checkbox" id="dd-all"${noneActive ? ' checked' : ''}> (Select All)</label>
+    </div>
+    <div class="dd-list">${listItems}</div>
+    <div class="dd-footer">
+      <button class="dd-clear">Clear filter</button>
+      <button class="dd-ok">OK</button>
+    </div>`;
+  document.body.appendChild(dd);
+  _dropdown = { el: dd, col };
+
+  // Position below the header cell, clamped to viewport
+  const rect = thEl.getBoundingClientRect();
+  const ddW  = 240;
+  let left   = rect.left + window.scrollX;
+  if (left + ddW > window.innerWidth - 8) left = window.innerWidth - ddW - 8;
+  dd.style.top  = (rect.bottom + window.scrollY) + 'px';
+  dd.style.left = Math.max(4, left) + 'px';
+
+  const searchEl  = dd.querySelector('.dd-search');
+  const selectAll = dd.querySelector('#dd-all');
+  const list      = dd.querySelector('.dd-list');
+  searchEl.focus();
+
+  searchEl.addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    list.querySelectorAll('.dd-item').forEach(item => {
+      item.style.display = item.querySelector('span').textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+
+  function syncSelectAll() {
+    const items   = [...list.querySelectorAll('.dd-item input')];
+    const checked = items.filter(cb => cb.checked);
+    selectAll.checked       = checked.length === items.length;
+    selectAll.indeterminate = checked.length > 0 && checked.length < items.length;
+  }
+  list.addEventListener('change', syncSelectAll);
+  selectAll.addEventListener('change', function() {
+    list.querySelectorAll('.dd-item input').forEach(cb => { cb.checked = this.checked; });
+  });
+
+  dd.querySelector('.dd-ok').addEventListener('click', () => {
+    const checked = [...list.querySelectorAll('.dd-item input:checked')].map(cb => cb.value);
+    if (checked.length === allVals.length) {
+      delete colFilters[col];
+    } else {
+      colFilters[col] = new Set(checked);
+    }
+    closeDropdown();
+    applyFilters();
+  });
+
+  dd.querySelector('.dd-clear').addEventListener('click', () => {
+    delete colFilters[col];
+    closeDropdown();
+    applyFilters();
+  });
+}
+
+function closeDropdown() {
+  if (_dropdown) { _dropdown.el.remove(); _dropdown = null; }
+}
+
+document.addEventListener('click',   e => { if (_dropdown && !_dropdown.el.contains(e.target)) closeDropdown(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDropdown(); });
+// ── Status ────────────────────────────────────────────────────────────────────
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+setupZone('zone-env',    'file-env',    'envXml');
+setupZone('zone-fields', 'file-fields', 'fieldsXml');
+</script>
+</body>
+</html>
