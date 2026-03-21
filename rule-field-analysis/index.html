@@ -336,7 +336,14 @@ function getFilteredRows() {
   let rows = allRows;
   if (q) rows = rows.filter(row => COLS.some(c => (row[c] || '').toLowerCase().includes(q)));
   for (const [col, vals] of Object.entries(colFilters)) {
-    if (vals && vals.size > 0) rows = rows.filter(row => vals.has(row[col] || ''));
+    if (vals && vals.size > 0) rows = rows.filter(row => {
+      const cellVal = row[col] || '';
+      if (col === 'CheckedValues') {
+        if (!cellVal) return vals.has('');
+        return cellVal.split('; ').some(v => vals.has(v.trim()));
+      }
+      return vals.has(cellVal);
+    });
   }
   return rows;
 }
@@ -408,9 +415,15 @@ let _dropdown = null;
 
 function openDropdown(col, thEl) {
   closeDropdown();
-  const allVals = [...new Set(allRows.map(r => r[col] || ''))].sort((a, b) =>
-    a.localeCompare(b, undefined, { numeric: true })
-  );
+  const allVals = col === 'CheckedValues'
+    ? [...new Set(allRows.flatMap(r => {
+        const cv = r[col] || '';
+        if (!cv) return [''];
+        return cv.split('; ').map(s => s.trim()).filter(Boolean);
+      }))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    : [...new Set(allRows.map(r => r[col] || ''))].sort((a, b) =>
+        a.localeCompare(b, undefined, { numeric: true })
+      );
   const activeSet  = colFilters[col];
   const noneActive = !activeSet || activeSet.size === 0;
 
