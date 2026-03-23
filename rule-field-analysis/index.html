@@ -123,7 +123,7 @@ let colFilters = {};
 
 // ── Regex patterns (same as Python script) ────────────────────────────────────
 const RE_REPORT       = /@Report\(([A-Za-z0-9._]+_\d+)(?:,([^)]+(?:\([^)]*\)[^)]*)*))?\)/g;
-const RE_REPORT_MULTI = /@ReportMulti\(([A-Za-z0-9._]+),function\((\w+)\),outputIndex\((\d+)\),keyValues\(((?:[^()]*|\([^()]*\))*)\)/g;
+const RE_REPORT_MULTI = /@ReportMulti\(([A-Za-z0-9._]+),function\((\w+)\),outputIndex\((-?\d+)\),keyValues\(((?:[^()]*|\([^()]*\))*)\)/g;
 const RE_INCL_VALS    = /includedValues\(([^)]*)/;
 
 // ── File loading ──────────────────────────────────────────────────────────────
@@ -246,7 +246,11 @@ function resolveCheckedValues(paramStr, info) {
 function resolveMulti(atRecord, outputIdxStr, multiMap) {
   const cat = multiMap[atRecord];
   if (!cat) return { catName: `[unknown: ${atRecord}]`, fieldName: '[unknown]', atIdx: '?' };
-  const atIdx = String(parseInt(outputIdxStr, 10) + 1);
+  const outputIdx = parseInt(outputIdxStr, 10);
+  if (outputIdx === -1) {
+    return { catName: cat.cat_name, fieldName: cat.cat_name, atIdx: '-1' };
+  }
+  const atIdx = String(outputIdx + 1);
   return { catName: cat.cat_name, fieldName: cat.fields[atIdx] || `[unknown field ${atIdx}]`, atIdx };
 }
 
