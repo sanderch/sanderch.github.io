@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Genericus — Build Any Business System Without Writing Code</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:     #6366f1;
+      --brand-dk:  #4f46e5;
+      --brand-lt:  #e0e7ff;
+      --fg:        #0f172a;
+      --fg-muted:  #475569;
+      --bg:        #ffffff;
+      --bg-alt:    #f8fafc;
+      --border:    #e2e8f0;
+      --radius:    12px;
+      --shadow:    0 4px 24px rgba(99,102,241,.12);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: var(--fg);
+      background: var(--bg);
+      line-height: 1.6;
+    }
+
+    /* ── NAV ─────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 5vw;
+      height: 64px;
+      background: rgba(255,255,255,.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-size: 1.25rem; font-weight: 800; letter-spacing: -.5px;
+      color: var(--brand-dk); text-decoration: none;
+    }
+
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      font-size: .9rem; font-weight: 500; color: var(--fg-muted);
+      text-decoration: none; transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--brand-dk); }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .6rem 1.4rem; border-radius: 8px;
+      font-size: .9rem; font-weight: 600;
+      cursor: pointer; text-decoration: none; transition: all .2s;
+      border: none;
+    }
+    .btn-primary {
+      background: var(--brand); color: #fff;
+    }
+    .btn-primary:hover { background: var(--brand-dk); transform: translateY(-1px); box-shadow: var(--shadow); }
+    .btn-outline {
+      background: transparent; color: var(--brand-dk);
+      border: 2px solid var(--brand);
+    }
+    .btn-outline:hover { background: var(--brand-lt); }
+
+    /* ── HERO ────────────────────────────────────────── */
+    .hero {
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center;
+      padding: 7rem 5vw 5rem;
+      background: linear-gradient(160deg, #f0f4ff 0%, #ffffff 60%);
+    }
+
+    .hero-badge {
+      display: inline-block;
+      padding: .3rem .9rem; margin-bottom: 1.5rem;
+      background: var(--brand-lt); color: var(--brand-dk);
+      border-radius: 999px; font-size: .8rem; font-weight: 700;
+      letter-spacing: .04em; text-transform: uppercase;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 900; line-height: 1.1;
+      letter-spacing: -.03em;
+      max-width: 780px;
+    }
+
+    .hero h1 span { color: var(--brand); }
+
+    .hero p {
+      margin-top: 1.25rem; max-width: 600px;
+      font-size: 1.15rem; color: var(--fg-muted);
+    }
+
+    .hero-actions {
+      display: flex; flex-wrap: wrap; gap: 1rem;
+      margin-top: 2.5rem; justify-content: center;
+    }
+
+    .hero-actions .btn { font-size: 1rem; padding: .8rem 2rem; border-radius: 10px; }
+
+    /* ── LOGOS / TRUST BAR ───────────────────────────── */
+    .trust {
+      text-align: center;
+      padding: 2.5rem 5vw;
+      border-bottom: 1px solid var(--border);
+    }
+    .trust p { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: #94a3b8; margin-bottom: 1.25rem; }
+    .trust-logos { display: flex; flex-wrap: wrap; justify-content: center; gap: 2.5rem; }
+    .trust-logos span {
+      font-size: 1rem; font-weight: 700; color: #cbd5e1;
+      letter-spacing: -.02em;
+    }
+
+    /* ── SECTIONS ────────────────────────────────────── */
+    section { padding: 5rem 5vw; }
+    .section-label {
+      font-size: .78rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--brand); margin-bottom: .75rem;
+    }
+    .section-title {
+      font-size: clamp(1.7rem, 3vw, 2.5rem);
+      font-weight: 800; line-height: 1.2; letter-spacing: -.02em;
+      max-width: 640px;
+    }
+    .section-sub {
+      margin-top: .75rem; max-width: 560px;
+      font-size: 1.05rem; color: var(--fg-muted);
+    }
+    .text-center { text-align: center; }
+    .text-center .section-title, .text-center .section-sub { margin-left: auto; margin-right: auto; }
+
+    /* ── FEATURE GRID ────────────────────────────────── */
+    .features-bg { background: var(--bg-alt); }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    .feature-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.75rem;
+      transition: box-shadow .2s, transform .2s;
+    }
+    .feature-card:hover { box-shadow: var(--shadow); transform: translateY(-3px); }
+
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: var(--brand-lt);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; margin-bottom: 1rem;
+    }
+
+    .feature-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: .4rem; }
+    .feature-card p { font-size: .9rem; color: var(--fg-muted); }
+
+    /* ── HOW IT WORKS ────────────────────────────────── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+      counter-reset: steps;
+    }
+
+    .step { counter-increment: steps; position: relative; padding-top: 1rem; }
+    .step::before {
+      content: counter(steps);
+      display: block;
+      width: 40px; height: 40px; line-height: 40px;
+      border-radius: 50%;
+      background: var(--brand); color: #fff;
+      font-weight: 800; font-size: .95rem; text-align: center;
+      margin-bottom: 1rem;
+    }
+    .step h3 { font-size: 1rem; font-weight: 700; margin-bottom: .4rem; }
+    .step p  { font-size: .9rem; color: var(--fg-muted); }
+
+    /* ── PERSONA CARDS ───────────────────────────────── */
+    .personas {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .persona {
+      border-radius: var(--radius);
+      padding: 2rem;
+      border: 1px solid var(--border);
+    }
+    .persona-admin { background: linear-gradient(135deg, #ede9fe, #f0f4ff); }
+    .persona-user  { background: linear-gradient(135deg, #ecfdf5, #f0fdf4); }
+
+    .persona-tag {
+      display: inline-block; margin-bottom: .75rem;
+      padding: .25rem .75rem; border-radius: 999px;
+      font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    }
+    .persona-admin .persona-tag { background: #ddd6fe; color: #5b21b6; }
+    .persona-user  .persona-tag { background: #a7f3d0; color: #065f46; }
+
+    .persona h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: .5rem; }
+    .persona p  { font-size: .92rem; color: var(--fg-muted); margin-bottom: 1rem; }
+    .persona ul { list-style: none; }
+    .persona ul li {
+      font-size: .88rem; color: var(--fg-muted);
+      padding: .3rem 0; display: flex; align-items: flex-start; gap: .5rem;
+    }
+    .persona ul li::before { content: "✓"; color: var(--brand); font-weight: 700; flex-shrink: 0; }
+
+    /* ── TECH STACK ──────────────────────────────────── */
+    .stack-bg { background: var(--bg-alt); }
+
+    .stack-pills {
+      display: flex; flex-wrap: wrap; gap: .75rem;
+      margin-top: 2rem; justify-content: center;
+    }
+    .stack-pill {
+      padding: .45rem 1.1rem; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--bg);
+      font-size: .85rem; font-weight: 600; color: var(--fg-muted);
+    }
+
+    /* ── CTA ─────────────────────────────────────────── */
+    .cta {
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dk) 100%);
+      color: #fff; text-align: center;
+      padding: 6rem 5vw;
+    }
+    .cta .section-title { color: #fff; }
+    .cta .section-sub   { color: rgba(255,255,255,.8); }
+    .cta .btn-white {
+      background: #fff; color: var(--brand-dk);
+      font-weight: 700; font-size: 1rem;
+      padding: .85rem 2.2rem; border-radius: 10px;
+      text-decoration: none;
+      transition: all .2s;
+    }
+    .cta .btn-white:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,.2); }
+    .cta-actions { margin-top: 2.5rem; }
+
+    /* ── FOOTER ──────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 2rem 5vw;
+      border-top: 1px solid var(--border);
+      font-size: .82rem; color: #94a3b8;
+    }
+    footer a { color: var(--brand); text-decoration: none; }
+
+    /* ── RESPONSIVE ──────────────────────────────────── */
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+      .hero { padding: 5rem 6vw 4rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="#">Genericus</a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#for-who">Who It's For</a></li>
+      <li><a href="#stack">Tech Stack</a></li>
+    </ul>
+    <a href="#get-started" class="btn btn-primary">Get Started</a>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero">
+    <span class="hero-badge">&#10024; API-first &middot; Metadata-driven &middot; Zero redeploys</span>
+    <h1>Build any business system <span>without writing code</span></h1>
+    <p>
+      Genericus is a runtime-configurable application platform. Define entities,
+      fields, and relationships through a UI — and get production-ready APIs and
+      data-entry screens instantly.
+    </p>
+    <div class="hero-actions">
+      <a href="#get-started" class="btn btn-primary">&#8594; Get Started Free</a>
+      <a href="#how-it-works" class="btn btn-outline">See How It Works</a>
+    </div>
+  </header>
+
+  <!-- TRUST BAR -->
+  <div class="trust">
+    <p>Built with battle-tested open-source technology</p>
+    <div class="trust-logos">
+      <span>TypeScript</span>
+      <span>Fastify</span>
+      <span>React</span>
+      <span>Vite</span>
+      <span>SQLite</span>
+      <span>OpenAPI 3.1</span>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section id="features" class="features-bg">
+    <div class="text-center">
+      <p class="section-label">Features</p>
+      <h2 class="section-title">Everything you need, nothing you don't</h2>
+      <p class="section-sub">
+        One platform to model your domain, expose a clean REST API, and serve a
+        fully functional UI — all without a single line of application code.
+      </p>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🧩</div>
+        <h3>Runtime Domain Modelling</h3>
+        <p>Create entities, properties, and relationships on the fly — changes take effect instantly with no redeploy.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Auto-Generated REST APIs</h3>
+        <p>Every entity you define automatically gets versioned CRUD endpoints, pagination, sorting, and filtering.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🖥️</div>
+        <h3>Auto-Generated UIs</h3>
+        <p>Separate admin and user interfaces generated from your metadata — list views, forms, and relation browsers included.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔗</div>
+        <h3>Relationship Engine</h3>
+        <p>Define 1:1, 1:N, and N:N relationships with bidirectional naming. Relation-aware endpoints are created automatically.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✅</div>
+        <h3>Built-In Validation</h3>
+        <p>Required fields, type checks, unique constraints, cardinality enforcement, and unknown-field rejection out of the box.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <h3>Metadata Versioning</h3>
+        <p>Draft, validate, and publish metadata versions. Roll back safely. Full audit log included for compliance.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <h3>Workflow & Events</h3>
+        <p>Model state machines with workflow states, event logging, and command execution with input validation.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📄</div>
+        <h3>OpenAPI 3.1 Docs</h3>
+        <p>Living API documentation generated and published automatically. Use it directly to generate client SDKs.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🖱️</div>
+        <h3>Powerful CLI</h3>
+        <p>Full control over metadata and data operations from the command line — perfect for scripting and CI/CD pipelines.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works">
+    <div class="text-center">
+      <p class="section-label">How It Works</p>
+      <h2 class="section-title">From idea to running system in minutes</h2>
+      <p class="section-sub">No code changes, no redeployments — just configuration.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <h3>Model Your Domain</h3>
+        <p>Use the Admin UI or CLI to define entities (e.g., <em>Company</em>, <em>Employee</em>, <em>Asset</em>), their fields, data types, and validation rules.</p>
+      </div>
+      <div class="step">
+        <h3>Define Relationships</h3>
+        <p>Connect entities with 1:1, 1:N, or N:N relationships. Give each direction a friendly name — Genericus handles the rest.</p>
+      </div>
+      <div class="step">
+        <h3>Publish Metadata</h3>
+        <p>Validate your schema and publish it. Genericus instantly activates the new configuration across all API endpoints and generated UIs.</p>
+      </div>
+      <div class="step">
+        <h3>Use Your System</h3>
+        <p>End users interact with auto-generated forms and list views. Developers consume the versioned REST API or generated OpenAPI client.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOR WHO -->
+  <section id="for-who" class="features-bg">
+    <div class="text-center">
+      <p class="section-label">Who It's For</p>
+      <h2 class="section-title">Two roles, one platform</h2>
+      <p class="section-sub">Genericus serves the people who design systems and the people who use them.</p>
+    </div>
+
+    <div class="personas">
+      <div class="persona persona-admin">
+        <span class="persona-tag">Administrator</span>
+        <h3>System Designers</h3>
+        <p>Architects, operations managers, and low-code builders who need to spin up configurable business applications fast.</p>
+        <ul>
+          <li>Design entities, fields, and relationships visually</li>
+          <li>Set validation rules and unique constraints</li>
+          <li>Define workflow states, events, and commands</li>
+          <li>Publish and version metadata changes safely</li>
+          <li>Monitor audit logs and health probes</li>
+        </ul>
+      </div>
+      <div class="persona persona-user">
+        <span class="persona-tag">End User</span>
+        <h3>Business Users</h3>
+        <p>Operations teams and data stewards who need clean, easy interfaces to manage their day-to-day business records.</p>
+        <ul>
+          <li>Create, view, edit, and delete records</li>
+          <li>Navigate related records across entities</li>
+          <li>Use generated forms with built-in validation feedback</li>
+          <li>Filter and sort large record lists with ease</li>
+          <li>No training required — UI matches the domain exactly</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- TECH STACK -->
+  <section id="stack" class="stack-bg text-center">
+    <p class="section-label">Technology</p>
+    <h2 class="section-title">Production-grade stack, open-source all the way</h2>
+    <p class="section-sub">
+      Built on proven, modern technologies with patterns designed to scale from
+      a local SQLite POC to a production-grade deployment.
+    </p>
+    <div class="stack-pills">
+      <span class="stack-pill">TypeScript</span>
+      <span class="stack-pill">Fastify</span>
+      <span class="stack-pill">React 18</span>
+      <span class="stack-pill">Vite</span>
+      <span class="stack-pill">SQLite</span>
+      <span class="stack-pill">OpenAPI 3.1</span>
+      <span class="stack-pill">REST API</span>
+      <span class="stack-pill">Monorepo</span>
+      <span class="stack-pill">Role-Based Access</span>
+      <span class="stack-pill">Structured Logging</span>
+      <span class="stack-pill">Integration Tests</span>
+      <span class="stack-pill">CLI</span>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="get-started" class="cta">
+    <p class="section-label" style="color:rgba(255,255,255,.7)">Ready to start?</p>
+    <h2 class="section-title">Launch your configurable system today</h2>
+    <p class="section-sub">
+      Clone the repo, run the dev server, and have a fully functional
+      metadata-driven application in under five minutes.
+    </p>
+    <div class="cta-actions">
+      <a href="https://github.com" class="btn-white btn">&#128640; View on GitHub</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>&copy; 2026 Genericus. Built with TypeScript, Fastify &amp; React. &mdash; <a href="docs/specification.md">Specification</a> &middot; <a href="docs/cli-reference.md">CLI Reference</a></p>
+  </footer>
+
+</body>
+</html>
