@@ -29,7 +29,9 @@
   header { background: var(--navy); color: #e8ebef; padding: 10px 20px; display: flex; align-items: center; gap: 20px; border-bottom: 2px solid var(--red); }
   header h1 { font-size: 15px; font-weight: 600; letter-spacing: .01em; color: #fff; }
   header .subtitle { font-size: 11px; color: #8fa0b4; margin-top: 1px; }
-  #total-badge { margin-left: auto; font-size: 12px; color: #8fa0b4; white-space: nowrap; border-left: 1px solid #2d4460; padding-left: 18px; }
+  #reset-all { margin-left: auto; border: 1px solid #3d5a7a; background: transparent; color: #8fa0b4; padding: 4px 12px; font-size: 11px; cursor: pointer; letter-spacing: .02em; }
+  #reset-all:hover { background: #2d4460; color: #c8d4e0; }
+  #total-badge { font-size: 12px; color: #8fa0b4; white-space: nowrap; border-left: 1px solid #2d4460; padding-left: 18px; }
   #total-badge strong { color: #c8d4e0; }
 
   .layout { display: grid; grid-template-columns: 290px 1fr; height: calc(100vh - 44px); overflow: hidden; }
@@ -121,6 +123,7 @@
     <h1>Indfødsret 2026 – Kandidatanalyse</h1>
     <div class="subtitle">L 98, fremsat 22. januar 2026 · Anonymiseret · kun aggregerede tal</div>
   </div>
+  <button id="reset-all" title="Nulstil alle filtre">Nulstil alle filtre</button>
   <div id="total-badge">Viser <strong id="match-count">–</strong> af 2.055 personer</div>
 </header>
 <div class="layout">
@@ -550,6 +553,15 @@ function drillDown(dim, value) {
   }
   update();
 }
+
+// Reset all filters
+document.getElementById('reset-all').addEventListener('click', () => {
+  document.getElementById('reset-age').click();
+  document.getElementById('reset-category').click();
+  document.getElementById('reset-ceremony').click();
+  document.querySelectorAll('[data-ms]').forEach(el => el.click());
+  update();
+});
 
 // Initial render
 update();
