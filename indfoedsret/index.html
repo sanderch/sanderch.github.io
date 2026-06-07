@@ -84,6 +84,9 @@
   .gb-btn { border: 1px solid #2d4460; background: transparent; color: #8fa0b4; padding: 4px 12px; font-size: 12px; cursor: pointer; transition: all .12s; letter-spacing: .01em; }
   .gb-btn:hover { background: #2d4460; color: #c8d4e0; border-color: #3d5a7a; }
   .gb-btn.active { background: var(--red); border-color: #5c1a27; color: #f0d8dc; font-weight: 600; }
+  .gb-badge { display: inline-flex; align-items: center; gap: 3px; margin-left: 5px; background: rgba(255,255,255,0.18); border-radius: 2px; font-size: 10px; padding: 1px 3px 1px 5px; font-weight: 700; vertical-align: middle; line-height: 1.4; }
+  .gb-badge-reset { border: none; background: none; color: inherit; cursor: pointer; font-size: 11px; line-height: 1; padding: 0 1px; opacity: .7; font-weight: 400; }
+  .gb-badge-reset:hover { opacity: 1; }
 
   /* Results */
   #results { flex: 1; overflow-y: auto; padding: 18px 20px; }
@@ -499,9 +502,64 @@ const DIM_LABELS = {
   gender: 'køn',
 };
 
+function updateGroupByBadges() {
+  const totals = {
+    citizenship: CITIZENSHIPS.length,
+    birthcountry: BIRTH_COUNTRIES.length,
+    municipality: MUNICIPALITIES.length,
+    category: CATEGORIES.length,
+    ceremony: 2,
+    gender: 2,
+  };
+  document.querySelectorAll('.gb-btn').forEach(btn => {
+    const dim = btn.dataset.dim;
+    // Remove existing badge
+    const existing = btn.querySelector('.gb-badge');
+    if (existing) existing.remove();
+
+    let label = null;
+    if (dim === 'agegroup') {
+      if (state.ageMin > 0 || state.ageMax < 90)
+        label = state.ageMin + '–' + state.ageMax;
+    } else if (totals[dim] !== undefined) {
+      const sel = dim === 'category' ? state.categories.size
+                : dim === 'ceremony' ? state.ceremony.size
+                : dim === 'gender'   ? state.gender.size
+                : state[dim].size;
+      if (sel < totals[dim]) label = String(sel);
+    }
+
+    if (label !== null) {
+      const resetId = dim === 'citizenship' || dim === 'birthcountry' || dim === 'municipality'
+        ? null : 'reset-' + (dim === 'category' ? 'category' : dim === 'agegroup' ? 'age' : dim);
+      const resetMs = (dim === 'citizenship' || dim === 'birthcountry' || dim === 'municipality')
+        ? `[data-ms="${dim}"]` : null;
+
+      const badge = document.createElement('span');
+      badge.className = 'gb-badge';
+
+      const text = document.createTextNode(label);
+      badge.appendChild(text);
+
+      const x = document.createElement('button');
+      x.className = 'gb-badge-reset';
+      x.title = 'Nulstil filter';
+      x.textContent = '×';
+      x.addEventListener('click', e => {
+        e.stopPropagation();
+        if (resetId) document.getElementById(resetId).click();
+        else if (resetMs) document.querySelector(resetMs).click();
+      });
+      badge.appendChild(x);
+      btn.appendChild(badge);
+    }
+  });
+}
+
 function update() {
   const matches = getMatches();
   document.getElementById('match-count').textContent = matches.length.toLocaleString('da');
+  updateGroupByBadges();
   document.getElementById('results-title').textContent =
     'Fordeling efter ' + DIM_LABELS[state.groupBy];
 
