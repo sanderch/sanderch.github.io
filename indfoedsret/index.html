@@ -192,7 +192,7 @@
     </div>
 
     <div class="filter-group">
-      <div class="filter-label">Kommune / Opholdssted <span class="filter-reset" data-ms="municipality">Alle</span></div>
+      <div class="filter-label">Opholdssted (kommune / land) <span class="filter-reset" data-ms="municipality">Alle</span></div>
       <div class="ms-wrapper" id="ms-municipality"></div>
     </div>
 
@@ -220,7 +220,7 @@
       <span class="gb-label">Vis fordeling efter:</span>
       <button class="gb-btn active" data-dim="citizenship">Statsborgerskab</button>
       <button class="gb-btn" data-dim="birthcountry">Fødeland</button>
-      <button class="gb-btn" data-dim="municipality">Kommune</button>
+      <button class="gb-btn" data-dim="municipality">Opholdssted</button>
       <button class="gb-btn" data-dim="category">Kategori</button>
       <button class="gb-btn" data-dim="agegroup">Aldersgruppe</button>
       <button class="gb-btn" data-dim="ceremony">Grundlovsceremoni</button>
@@ -533,7 +533,7 @@ function groupData(matches) {
 const DIM_LABELS = {
   citizenship: 'statsborgerskab',
   birthcountry: 'fødeland',
-  municipality: 'kommune / opholdssted',
+  municipality: 'opholdssted',
   category: 'kategori',
   agegroup: 'aldersgruppe',
   ceremony: 'grundlovsceremoni',
