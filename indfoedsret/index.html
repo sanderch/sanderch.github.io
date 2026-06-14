@@ -101,6 +101,7 @@
   .results-header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
   .results-header h2 { font-size: 13px; font-weight: 700; letter-spacing: .01em; text-transform: uppercase; color: var(--navy); }
   .results-count { font-size: 11px; color: var(--text-faint); }
+  .results-hint { font-size: 11px; color: var(--text-faint); margin-left: auto; font-style: italic; }
 
   table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); }
   th { background: var(--navy); color: #8fa0b4; border-bottom: 1px solid #0d1a28; padding: 7px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
@@ -118,6 +119,9 @@
   .drill-col { width: 20px; }
   .drill-icon { color: var(--border); font-size: 9px; text-align: center; width: 20px; transition: color .12s; }
   tbody tr.drillable:hover .drill-icon { color: var(--accent); }
+  tbody tr.drillable.selected td { background: var(--accent-light); }
+  tbody tr.drillable.selected td:first-child { font-weight: 600; color: var(--navy); box-shadow: inset 3px 0 0 var(--red); }
+  tbody tr.drillable.selected .drill-icon { color: var(--red); font-size: 11px; }
   .empty-state { text-align: center; padding: 60px 20px; color: var(--text-faint); font-size: 13px; }
 
   /* Scrollbar */
@@ -239,6 +243,7 @@
       <div class="results-header">
         <h2 id="results-title">Fordeling efter statsborgerskab</h2>
         <span class="results-count" id="results-count"></span>
+        <span class="results-hint">Klik: vis kun denne · Ctrl/⌘-klik: tilføj eller fjern</span>
       </div>
       <div id="results-body"></div>
     </div>
@@ -424,6 +429,22 @@ function buildMultiSelect(containerId, stateKey, items) {
       const sel = listDiv.querySelector(`input[value="${idx}"]`);
       if (sel) sel.closest('label').scrollIntoView({ block: 'nearest' });
       updateCount();
+    },
+    toggle(value) {
+      const idx = items.indexOf(value);
+      if (idx < 0) return;
+      let set;
+      if (state[stateKey].size === items.length) {
+        set = new Set([idx]); // from "all selected" (no active filter): start fresh
+      } else {
+        set = new Set(state[stateKey]); // toggle the value in/out
+        if (set.has(idx)) set.delete(idx); else set.add(idx);
+      }
+      state[stateKey] = set;
+      listDiv.querySelectorAll('input').forEach(cb => { cb.checked = set.has(+cb.value); });
+      search.value = '';
+      listDiv.querySelectorAll('label').forEach(lbl => lbl.classList.remove('hidden'));
+      updateCount();
     }
   };
 }
@@ -486,21 +507,47 @@ document.querySelectorAll('.gb-btn').forEach(btn => {
   });
 });
 
-// Filter + group logic
-function getMatches() {
-  return PERSONS.filter(p => {
+// Filter + group logic.
+// `exceptDim` skips one dimension's own filter — used for the faceted results
+// table so selecting values in the grouped dimension doesn't hide the other groups.
+function personMatches(p, exceptDim) {
+  if (exceptDim !== 'agegroup') {
     const age = p[F_YEAR] ? 2026 - p[F_YEAR] : null;
     if (age !== null && (age < state.ageMin || age > state.ageMax)) return false;
     if (age === null && state.ageMin > 0) return false; // exclude unknown ages if filter active
-    if (!state.categories.has(p[F_CAT])) return false;
-    if (!state.ceremony.has(p[F_CER])) return false;
-    if (!state.gender.has(p[F_GEN])) return false;
-    if (!state.citizenship.has(p[F_CIT])) return false;
-    if (!state.birthcountry.has(p[F_BC])) return false;
-    if (!state.municipality.has(p[F_MUN])) return false;
-    if (!state.region.has(MUNI_REGION[p[F_MUN]])) return false;
-    return true;
-  });
+  }
+  if (exceptDim !== 'category'     && !state.categories.has(p[F_CAT])) return false;
+  if (exceptDim !== 'ceremony'     && !state.ceremony.has(p[F_CER])) return false;
+  if (exceptDim !== 'gender'       && !state.gender.has(p[F_GEN])) return false;
+  if (exceptDim !== 'citizenship'  && !state.citizenship.has(p[F_CIT])) return false;
+  if (exceptDim !== 'birthcountry' && !state.birthcountry.has(p[F_BC])) return false;
+  if (exceptDim !== 'municipality' && !state.municipality.has(p[F_MUN])) return false;
+  if (exceptDim !== 'region'       && !state.region.has(MUNI_REGION[p[F_MUN]])) return false;
+  return true;
+}
+function getMatches(exceptDim) {
+  return PERSONS.filter(p => personMatches(p, exceptDim));
+}
+
+// Is a given group value part of an ACTIVE (partial) selection on its dimension?
+function partialSel(set, total, idx) { return set.size < total && idx >= 0 && set.has(idx); }
+function isRowSelected(dim, key) {
+  switch (dim) {
+    case 'citizenship':  return partialSel(state.citizenship, CITIZENSHIPS.length, CITIZENSHIPS.indexOf(key));
+    case 'birthcountry': return partialSel(state.birthcountry, BIRTH_COUNTRIES.length, BIRTH_COUNTRIES.indexOf(key));
+    case 'municipality': return partialSel(state.municipality, MUNICIPALITIES.length, MUNICIPALITIES.indexOf(key));
+    case 'category':     return partialSel(state.categories, CATEGORIES.length, CATEGORIES.indexOf(key));
+    case 'ceremony':     return partialSel(state.ceremony, 2, key.startsWith('Ja') ? 1 : 0);
+    case 'gender':       return partialSel(state.gender, 2, key === 'Kvinde' ? 1 : 0);
+    case 'region':       return partialSel(state.region, REGIONS.length, REGIONS.indexOf(key));
+    case 'agegroup': {
+      if (state.ageMin === 0 && state.ageMax === 90) return false;
+      if (key === 'Ukendt' || key === '90+') return false;
+      const [lo, hi] = key.split('–').map(Number);
+      return lo >= state.ageMin && hi <= state.ageMax;
+    }
+  }
+  return false;
 }
 
 const AGE_GROUPS = ['0–9','10–19','20–29','30–39','40–49','50–59','60–69','70–79','80–89','90+'];
@@ -606,14 +653,17 @@ function updateGroupByBadges() {
 }
 
 function update() {
-  const matches = getMatches();
-  document.getElementById('match-count').textContent = matches.length.toLocaleString('da');
+  // Top count reflects ALL active filters.
+  document.getElementById('match-count').textContent = getMatches().length.toLocaleString('da');
   updateGroupByBadges();
   document.getElementById('results-title').textContent =
     'Fordeling efter ' + DIM_LABELS[state.groupBy];
 
-  const entries = groupData(matches);
-  const total = matches.length;
+  // Faceted table: don't apply the grouped dimension's own filter, so all its
+  // groups stay visible and selected ones are highlighted (build a set in place).
+  const facetMatches = getMatches(state.groupBy);
+  const entries = groupData(facetMatches);
+  const total = facetMatches.length;
   const body = document.getElementById('results-body');
 
   if (total === 0) {
@@ -622,7 +672,10 @@ function update() {
     return;
   }
 
-  document.getElementById('results-count').textContent = `${entries.length} grupper · ${total.toLocaleString('da')} personer`;
+  const selectedCount = entries.filter(([key]) => isRowSelected(state.groupBy, key)).length;
+  const countText = `${entries.length} grupper · ${total.toLocaleString('da')} personer`;
+  document.getElementById('results-count').textContent =
+    selectedCount > 0 ? `${countText} · ${selectedCount} valgt` : countText;
 
   const table = document.createElement('table');
   table.innerHTML = `<thead><tr>
@@ -637,17 +690,18 @@ function update() {
   entries.forEach(([key, count]) => {
     const pct = ((count/total)*100).toFixed(1);
     const barW = Math.round((count/maxCount)*100);
+    const selected = isRowSelected(state.groupBy, key);
     const tr = document.createElement('tr');
-    tr.className = 'drillable';
-    tr.title = 'Klik for at filtrere på dette element';
+    tr.className = selected ? 'drillable selected' : 'drillable';
+    tr.title = 'Klik: vis kun denne · Ctrl/⌘-klik: tilføj eller fjern';
     tr.innerHTML = `
       <td>${key}</td>
       <td class="num">${count.toLocaleString('da')}</td>
       <td class="pct">${pct}%</td>
       <td class="bar-cell"><div class="bar-outer"><div class="bar-inner" style="width:${barW}%"></div></div></td>
-      <td class="drill-icon">&#x25B6;</td>
+      <td class="drill-icon">${selected ? '&#x2713;' : '&#x25B6;'}</td>
     `;
-    tr.addEventListener('click', () => drillDown(state.groupBy, key));
+    tr.addEventListener('click', (e) => drillDown(state.groupBy, key, e.ctrlKey || e.metaKey));
     tbody.appendChild(tr);
   });
   table.appendChild(tbody);
@@ -655,43 +709,51 @@ function update() {
   body.appendChild(table);
 }
 
-// Drill-down: clicking a result row isolates that value in the left filter
-function drillDown(dim, value) {
+// Drill-down: clicking a result row filters the left panel.
+// Plain click isolates (show only this); Ctrl/⌘-click toggles the value in/out.
+function setCheckboxDim(stateKey, checksEl, idx, total, additive) {
+  if (idx < 0) return;
+  let set;
+  if (!additive || state[stateKey].size === total) {
+    // Plain click, or Ctrl/⌘-click from "all selected" (no active filter): start fresh
+    set = new Set([idx]);
+  } else {
+    set = new Set(state[stateKey]); // Ctrl/⌘-click on an active selection: toggle add/remove
+    if (set.has(idx)) set.delete(idx); else set.add(idx);
+  }
+  state[stateKey] = set;
+  checksEl.querySelectorAll('input').forEach(cb => { cb.checked = set.has(+cb.value); });
+}
+
+function drillDown(dim, value, additive) {
   switch (dim) {
     case 'citizenship':
-      msControllers['citizenship'].selectOnly(value); break;
     case 'birthcountry':
-      msControllers['birthcountry'].selectOnly(value); break;
     case 'municipality':
-      msControllers['municipality'].selectOnly(value); break;
-    case 'category': {
-      const idx = CATEGORIES.indexOf(value);
-      catChecks.querySelectorAll('input').forEach(cb => { cb.checked = +cb.value === idx; });
-      state.categories = new Set([idx]);
+      if (additive) msControllers[dim].toggle(value);
+      else msControllers[dim].selectOnly(value);
       break;
-    }
-    case 'ceremony': {
-      const cerVal = value.startsWith('Ja') ? 1 : 0;
-      cerChecks.querySelectorAll('input').forEach(cb => { cb.checked = +cb.value === cerVal; });
-      state.ceremony = new Set([cerVal]);
+    case 'category':
+      setCheckboxDim('categories', catChecks, CATEGORIES.indexOf(value), CATEGORIES.length, additive);
       break;
-    }
-    case 'gender': {
-      const genVal = value === 'Kvinde' ? 1 : 0;
-      genChecks.querySelectorAll('input').forEach(cb => { cb.checked = +cb.value === genVal; });
-      state.gender = new Set([genVal]);
+    case 'ceremony':
+      setCheckboxDim('ceremony', cerChecks, value.startsWith('Ja') ? 1 : 0, 2, additive);
       break;
-    }
-    case 'region': {
-      const regIdx = REGIONS.indexOf(value);
-      regChecks.querySelectorAll('input').forEach(cb => { cb.checked = +cb.value === regIdx; });
-      state.region = new Set([regIdx]);
+    case 'gender':
+      setCheckboxDim('gender', genChecks, value === 'Kvinde' ? 1 : 0, 2, additive);
       break;
-    }
+    case 'region':
+      setCheckboxDim('region', regChecks, REGIONS.indexOf(value), REGIONS.length, additive);
+      break;
     case 'agegroup': {
       if (value === 'Ukendt' || value === '90+') break;
       const parts = value.split('–');
-      const lo = +parts[0], hi = +parts[1];
+      let lo = +parts[0], hi = +parts[1];
+      // Ctrl/⌘-click expands the range (slider can't hold non-contiguous picks)
+      if (additive && !(state.ageMin === 0 && state.ageMax === 90)) {
+        lo = Math.min(state.ageMin, lo);
+        hi = Math.max(state.ageMax, hi);
+      }
       ageMin.value = lo; ageMax.value = hi;
       sliderMin.value = lo; sliderMax.value = hi;
       state.ageMin = lo; state.ageMax = hi;
