@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fabric Factory — Economy Game PoC</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0b0e13;
+    font-family: 'Segoe UI', system-ui, sans-serif; color: #e8edf2; user-select: none; }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; }
+
+  .panel {
+    background: rgba(16,21,29,0.94); border: 1px solid #2a3646; border-radius: 8px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.5); backdrop-filter: blur(6px);
+  }
+
+  /* ---- top resource bar (compact chips) ---- */
+  #topbar { position: absolute; top: 8px; left: 8px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .chip { display: flex; align-items: center; gap: 6px; padding: 5px 9px; font-size: 12px;
+    font-variant-numeric: tabular-nums; }
+  .chip .dot { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+  .chip .nm { color: #8fa1b5; }
+  .chip .vl { font-weight: 700; min-width: 30px; text-align: right; }
+  .chip .vl.low { color: #f87171; }
+  .chip.out { background: rgba(30,58,40,0.94); border-color:#2f6b46; }
+  .chip.out .nm { color:#86efac; }
+
+  /* ---- bottom build toolbar ---- */
+  #toolbar { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px; padding: 6px; }
+  .tool { position: relative; width: 62px; height: 60px; border-radius: 7px; border: 1px solid #2f3d4f;
+    background: #18222f; cursor: pointer; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 2px; transition: all .12s ease; color:#cbd6e2; }
+  .tool:hover:not(:disabled) { background: #21314380; border-color: #3d5573; transform: translateY(-2px); }
+  .tool.active { background: #1d4ed8; border-color: #3b82f6; color:#fff; box-shadow:0 0 0 1px #3b82f6; }
+  .tool:disabled { opacity: .4; cursor: not-allowed; }
+  .tool .ic { font-size: 22px; line-height: 1; }
+  .tool .lb { font-size: 10.5px; font-weight: 600; letter-spacing:.2px; }
+  .tool .ct { position:absolute; top:-6px; right:-6px; background:#0b1118; border:1px solid #3d5573;
+    color:#9fd3ff; font-size:10px; font-weight:700; border-radius:999px; padding:1px 5px; min-width:16px; text-align:center; }
+  .tool.sep { width:1px; height:60px; background:#2a3646; border:none; pointer-events:none; padding:0; }
+
+  /* ---- right-hand control column ---- */
+  #rightCol { position: absolute; top: 8px; right: 8px; width: 226px; display:flex; flex-direction:column;
+    gap: 8px; max-height: calc(100vh - 16px); overflow-y: auto; pointer-events: none; }
+  #rightCol > .panel { pointer-events: auto; padding: 10px 11px; }
+  #rightCol h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: #7d93ad;
+    margin-bottom: 8px; font-weight: 700; display:flex; align-items:center; justify-content:space-between; }
+  #factoryPanel, #depotPanel, #vehiclesPanel { display:none; }
+
+  /* ---- vehicle cards ---- */
+  .vcard { border:1px solid #2a3646; border-radius:7px; padding:8px; margin-top:8px; background:#141b25; }
+  .vcard .vh { display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; margin-bottom:6px; }
+  .vrow { display:flex; align-items:center; gap:6px; margin:4px 0; font-size:11px; }
+  .vrow label { width:44px; color:#8fa1b5; }
+  .vrow select { flex:1; background:#0e141c; color:#e8edf2; border:1px solid #34465c; border-radius:5px;
+    padding:3px 4px; font-size:11px; }
+  .vstatus { font-size:11px; margin-top:6px; padding:4px 6px; border-radius:5px; background:#1a2330; color:#9fb0c2; }
+  .vstatus.warn { background:#7f1d1d; color:#fecaca; font-weight:600; }
+  .vstatus.go { background:#14532d; color:#86efac; }
+  .badge { font-size:10px; padding:1px 7px; border-radius:999px; font-weight:700; }
+  .badge.run { background:#14532d; color:#86efac; }
+  .badge.idle { background:#3a2410; color:#fbbf24; }
+  .badge.blocked { background:#7f1d1d; color:#fecaca; }
+  .alert { background:#7f1d1d; color:#fecaca; font-size:11.5px; font-weight:600;
+    padding:6px 8px; border-radius:6px; margin:2px 0 8px; }
+  .kv { display:flex; justify-content:space-between; font-size:12px; margin:4px 0; }
+  .kv b { font-variant-numeric: tabular-nums; }
+  .recipe { font-size:11px; color:#8fa1b5; margin:6px 0 8px; line-height:1.4; }
+  .pbtn { display:block; width:100%; padding:8px; border-radius:6px; border:1px solid #34465c;
+    font-size:12.5px; font-weight:700; cursor:pointer; color:#fff; }
+  .pbtn.go { background:#2563eb; border-color:#3b82f6; }
+  .pbtn.go:hover { background:#3b82f6; }
+  .pbtn.stop { background:#7f1d1d; border-color:#b91c1c; }
+  .pbtn.stop:hover { background:#b91c1c; }
+
+  /* ---- status + log ---- */
+  #status { position:absolute; bottom: 80px; left:50%; transform:translateX(-50%); pointer-events:none; }
+  #status .pill { background: rgba(16,21,29,0.92); border: 1px solid #2a3646; border-radius: 999px;
+    padding: 5px 14px; font-size: 12px; color: #b6c2d0; white-space:nowrap; }
+  #log { position:absolute; bottom: 10px; left: 8px; width: 230px; display:flex; flex-direction:column-reverse;
+    gap:3px; pointer-events:none; }
+  .log-line { font-size: 11px; color:#9fb0c2; background: rgba(16,21,29,0.8); border-radius:5px; padding:3px 7px; }
+  .log-line.ok { color:#86efac; } .log-line.warn { color:#fca5a5; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- compact resource chips -->
+<div id="topbar"></div>
+
+<!-- build toolbar -->
+<div id="toolbar" class="panel">
+  <button class="tool" data-tool="factory" id="toolFactory" title="Build the Fabric Factory (one only)">
+    <span class="ic">🏭</span><span class="lb">Factory</span><span class="ct" id="ctFactory" style="display:none">1</span></button>
+  <button class="tool" data-tool="field" id="toolField" title="Build a cotton field — harvests cotton into the warehouse">
+    <span class="ic">🌾</span><span class="lb">Field</span><span class="ct" id="ctField" style="display:none">0</span></button>
+  <button class="tool" data-tool="road" id="toolRoad" title="Lay roads between buildings (for future transport)">
+    <span class="ic">🛣️</span><span class="lb">Road</span><span class="ct" id="ctRoad" style="display:none">0</span></button>
+  <button class="tool" data-tool="depot" id="toolDepot" title="Build a transport depot — create and dispatch trucks here">
+    <span class="ic">🚚</span><span class="lb">Depot</span><span class="ct" id="ctDepot" style="display:none">0</span></button>
+  <div class="tool sep"></div>
+  <button class="tool" data-tool="" id="toolCursor" title="Cursor / cancel (Esc)">
+    <span class="ic">🖱️</span><span class="lb">Cursor</span></button>
+</div>
+
+<!-- right-hand control column -->
+<div id="rightCol">
+  <div id="factoryPanel" class="panel">
+    <h2>Fabric Factory <span class="badge idle" id="factoryBadge">idle</span></h2>
+    <div class="kv"><span>Fabric stored</span><b id="fabricOut">0</b></div>
+    <div class="recipe">Per cycle: −2 Cotton · −1 Dye · −5 Power → +1 Fabric</div>
+    <div class="alert" id="factoryAlert" style="display:none">⛔ Storage full — production blocked</div>
+    <button class="pbtn go" id="startBtn">▶ Start production</button>
+    <button class="pbtn stop" id="stopBtn" style="display:none">■ Stop production</button>
+  </div>
+
+  <div id="depotPanel" class="panel">
+    <h2>Transport Depot</h2>
+    <div class="recipe">Create trucks here, then set each truck's source &amp; destination below.</div>
+    <button class="pbtn go" id="createTruckBtn">➕ Create open-hull truck</button>
+  </div>
+
+  <div id="vehiclesPanel" class="panel">
+    <h2>Vehicles <span class="badge idle" id="vehCount">0</span></h2>
+    <div id="vehList"></div>
+  </div>
+</div>
+
+<div id="log"></div>
+<div id="status"><div class="pill" id="statusPill">Pick a tool below · drag to orbit · scroll to zoom</div></div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ===========================================================================
+// State & economy config
+// ===========================================================================
+const RES = {
+  cotton: { name: 'Cotton', color: '#d9c6a3', max: 300, amount: 120 },
+  dye:    { name: 'Dye',    color: '#a855f7', max: 100, amount: 60  },
+  power:  { name: 'Power',  color: '#f59e0b', max: 500, amount: 300 },
+};
+const RECIPE = { cotton: 2, dye: 1, power: 5 }; // consumed per factory cycle
+const CYCLE_SECONDS = 1.5;                      // per fabric unit
+const FIELD_CYCLE   = 4.0;                      // seconds to grow one harvest
+const FIELD_YIELD   = 8;                        // cotton per harvest
+const STORE_COLS = 4, STORE_ROWS = 4, STORE_LAYERS = 3;       // fabric yard grid
+const FABRIC_CAP = STORE_COLS * STORE_ROWS * STORE_LAYERS;    // storage volume limit
+let fabric = 0;
+
+const game = {
+  tool: null,                 // null | 'factory' | 'field' | 'road' | 'depot'
+  factory: null,
+  producing: false,
+  blockedByStorage: false,
+  cycleTimer: 0,
+  fields: [],
+  roads: new Map(),           // "x,z" -> mesh
+  roadAnchor: null,           // {x,z} while laying road
+  depots: [],
+  vehicles: [],
+  nodes: [],                  // transport endpoints (source/destination stock points)
+};
+const footprints = [];        // {x,z,half|hx,hz} occupied building areas
+let delivered = 0;            // fabric delivered to the warehouse
+
+// ===========================================================================
+// Scene
+// ===========================================================================
+const app = document.getElementById('app');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#aacbe6');
+scene.fog = new THREE.Fog('#aacbe6', 45, 95);
+
+const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 500);
+camera.position.set(20, 18, 20);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.autoUpdate = false;   // shadows are static; refreshed on demand
+app.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI * 0.48;
+controls.minDistance = 8; controls.maxDistance = 70;
+
+// render only when something changed
+let dirty = true;
+function requestRender(){ dirty = true; }
+function refreshShadows(){ renderer.shadowMap.needsUpdate = true; dirty = true; }
+controls.addEventListener('change', requestRender);
+
+scene.add(new THREE.HemisphereLight('#dff0ff', '#3a4a3a', 0.9));
+const sun = new THREE.DirectionalLight('#fff4e0', 1.1);
+sun.position.set(20, 30, 10); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left:-45, right:45, top:45, bottom:-45 });
+scene.add(sun);
+
+// procedural sky environment so glass and metal pick up real reflections
+(function(){
+  const c = document.createElement('canvas'); c.width = 16; c.height = 128;
+  const ctx = c.getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,0,128);
+  grad.addColorStop(0.00,'#5b93d6'); grad.addColorStop(0.48,'#cfe3f2');
+  grad.addColorStop(0.52,'#9fb089'); grad.addColorStop(1.00,'#4f5e3d');
+  ctx.fillStyle = grad; ctx.fillRect(0,0,16,128);
+  const tex = new THREE.CanvasTexture(c);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromEquirectangular(tex).texture;
+  tex.dispose(); pmrem.dispose();
+})();
+
+const GRID = 20, TILE = 2, HALF_WORLD = GRID*TILE/2;
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(GRID*TILE, GRID*TILE),
+  new THREE.MeshStandardMaterial({ color:'#5b8a4a' }));
+ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+const grid = new THREE.GridHelper(GRID*TILE, GRID, '#3f6334', '#4a7340');
+grid.position.y = 0.01; scene.add(grid);
+
+// ===========================================================================
+// Shared building openings: industrial steel windows & doors
+// ===========================================================================
+const glassMat = new THREE.MeshStandardMaterial({
+  color:'#243845', metalness:0.6, roughness:0.08,
+  emissive:'#16344d', emissiveIntensity:0.12, envMapIntensity:1.4 });
+const frameMat = new THREE.MeshStandardMaterial({ color:'#2a2e33', metalness:0.5, roughness:0.5 });
+const sillMat  = new THREE.MeshStandardMaterial({ color:'#8d8b84', roughness:0.9 });
+
+function makeWindowPanel(){
+  const grp = new THREE.Group();
+  const W = 0.82, H = 1.05, fThk = 0.06, d = 0.08;
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(W, H), glassMat);
+  glass.position.z = -0.02; grp.add(glass);
+  const bars = [
+    [W+2*fThk, fThk, d, 0,  H/2, 0], [W+2*fThk, fThk, d, 0, -H/2, 0],
+    [fThk, H, d, -W/2, 0, 0],        [fThk, H, d,  W/2, 0, 0],
+  ];
+  for (const [bw,bh,bd,px,py,pz] of bars){
+    const m = new THREE.Mesh(new THREE.BoxGeometry(bw,bh,bd), frameMat);
+    m.position.set(px,py,pz); grp.add(m);
+  }
+  const mThk = 0.035;
+  for (const mx of [-W/6, W/6]){
+    const v = new THREE.Mesh(new THREE.BoxGeometry(mThk, H, 0.05), frameMat);
+    v.position.set(mx, 0, 0.005); grp.add(v);
+  }
+  const hbar = new THREE.Mesh(new THREE.BoxGeometry(W, mThk, 0.05), frameMat);
+  hbar.position.set(0, 0, 0.005); grp.add(hbar);
+  const sill = new THREE.Mesh(new THREE.BoxGeometry(W+0.16, 0.06, 0.16), sillMat);
+  sill.position.set(0, -H/2-0.05, 0.05); grp.add(sill);
+  return grp;
+}
+
+// corrugated roll-up loading door, origin at its centre
+function makeRollerDoor(W, H){
+  const grp = new THREE.Group();
+  const door = new THREE.Mesh(new THREE.PlaneGeometry(W, H),
+    new THREE.MeshStandardMaterial({ color:'#7a818b', metalness:0.55, roughness:0.45 }));
+  grp.add(door);
+  const slatN = Math.max(6, Math.round(H/0.26));
+  const slatMat = new THREE.MeshStandardMaterial({ color:'#474d56', roughness:0.7 });
+  for (let i=1;i<slatN;i++){
+    const s = new THREE.Mesh(new THREE.BoxGeometry(W, 0.025, 0.03), slatMat);
+    s.position.set(0, H/2 - i*(H/slatN), 0.02); grp.add(s);
+  }
+  for (const sx of [-1, 1]){
+    const jamb = new THREE.Mesh(new THREE.BoxGeometry(0.12, H+0.2, 0.16), frameMat);
+    jamb.position.set(sx*(W/2+0.06), 0, 0); grp.add(jamb);
+  }
+  const lintel = new THREE.Mesh(new THREE.BoxGeometry(W+0.36, 0.2, 0.18), frameMat);
+  lintel.position.set(0, H/2+0.1, 0.02); grp.add(lintel);
+  return grp;
+}
+
+// personnel door with frame and handle, origin at its centre
+function makeDoorPanel(W, H){
+  const grp = new THREE.Group();
+  const leaf = new THREE.Mesh(new THREE.PlaneGeometry(W, H),
+    new THREE.MeshStandardMaterial({ color:'#37475a', metalness:0.3, roughness:0.5 }));
+  grp.add(leaf);
+  const frT = new THREE.Mesh(new THREE.BoxGeometry(W+0.14, 0.09, 0.1), frameMat); frT.position.set(0, H/2+0.045, 0.02);
+  const frL = new THREE.Mesh(new THREE.BoxGeometry(0.09, H, 0.1), frameMat); frL.position.set(-W/2-0.045, 0, 0.02);
+  const frR = new THREE.Mesh(new THREE.BoxGeometry(0.09, H, 0.1), frameMat); frR.position.set( W/2+0.045, 0, 0.02);
+  grp.add(frT, frL, frR);
+  const handle = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.2, 0.05),
+    new THREE.MeshStandardMaterial({ color:'#cbd5e1', metalness:0.8, roughness:0.3 }));
+  handle.position.set(W/2-0.14, 0, 0.06); grp.add(handle);
+  return grp;
+}
+
+// place an opening panel onto a wall, oriented outward
+function orientPanel(p, x, y, z, facingX){
+  p.position.set(x, y, z);
+  if (facingX) p.rotation.y = Math.sign(x) * Math.PI/2;
+  else if (Math.sign(z) < 0) p.rotation.y = Math.PI;
+  return p;
+}
+
+// ---- warehouse (decorative anchor) ----
+(function(){
+  const g = new THREE.Group();
+  const L = 16, D = 8, Hw = 4.2;            // long, deep, single-storey industrial shell
+
+  const wb = makeBrickTextures({ brickColor:'#9aa0a6', mortarColor:'#c4c8cc' });
+  wb.map.repeat.set(8, 2.2); wb.bumpMap.repeat.copy(wb.map.repeat);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(L, Hw, D),
+    new THREE.MeshStandardMaterial({ map:wb.map, bumpMap:wb.bumpMap, bumpScale:0.05, roughness:0.95 }));
+  body.position.y = Hw/2; body.castShadow = body.receiveShadow = true;
+
+  const roof = makeGableRoof({ lx:L+0.6, zhalf:D/2+0.35, rise:2.0, eaveY:Hw,
+    tex: makeRoofTextures({ tile:'#5b6470', groove:'#363c45' }), repeat:[10,2.6], gableColor:'#aeb3b8' });
+  g.add(body, roof);
+
+  // front: row of loading-dock doors with a clerestory window band above
+  const zF = D/2 + 0.04;
+  for (const dx of [-5, 0, 5])
+    g.add(orientPanel(makeRollerDoor(2.6, 2.9), dx, 1.45, zF, false));
+  const bandX = [-6.4,-3.8,-1.2,1.4,4.0,6.6];
+  for (const wx of bandX) g.add(orientPanel(makeWindowPanel(), wx, 3.5, zF, false));
+
+  // back: two rows of windows
+  const zB = -D/2 - 0.04;
+  for (const wy of [1.9, 3.5])
+    for (const wx of bandX) g.add(orientPanel(makeWindowPanel(), wx, wy, zB, false));
+
+  // gable ends: high windows + a personnel door
+  for (const sx of [-1, 1]){
+    const xE = sx*(L/2 + 0.04);
+    for (const wz of [-2.4, 0, 2.4]) g.add(orientPanel(makeWindowPanel(), xE, 3.4, wz, true));
+  }
+  g.add(orientPanel(makeDoorPanel(1.0, 2.1), L/2 + 0.04, 1.05, 0, true));
+
+  // rooftop company sign across the front
+  const sign = new THREE.Mesh(new THREE.BoxGeometry(6, 0.9, 0.14),
+    new THREE.MeshStandardMaterial({ color:'#2563eb' }));
+  sign.position.set(0, Hw + 0.55, zF);
+  g.add(sign);
+
+  g.position.set(-8,0,-11);
+  scene.add(g);
+  footprints.push({ x:-8, z:-11, hx:L/2+0.4, hz:D/2+0.4 });
+  game.nodes.push({ name:'Warehouse', center:new THREE.Vector3(-8, 0, -7),
+    getStock:()=>delivered, give:()=>{ delivered++; renderResources(); } });
+})();
+
+// ===========================================================================
+// Models
+// ===========================================================================
+let smokeParticles = [];
+
+// Procedural brick texture (no image files): draws a running-bond brick pattern
+// onto a canvas for the colour map, plus a grayscale canvas for the bump relief.
+function makeBrickTextures({ brickColor='#a8503a', mortarColor='#caa98c' } = {}){
+  const S = 256, rows = 8, cols = 5;             // bricks per tile
+  const bh = S/rows, bw = S/cols, mortar = 3;    // brick size + mortar thickness
+  const col = document.createElement('canvas'); col.width = col.height = S;
+  const bmp = document.createElement('canvas'); bmp.width = bmp.height = S;
+  const c = col.getContext('2d'), b = bmp.getContext('2d');
+
+  c.fillStyle = mortarColor; c.fillRect(0,0,S,S);
+  b.fillStyle = '#404040';   b.fillRect(0,0,S,S);   // mortar = recessed (dark)
+
+  const base = new THREE.Color(brickColor);
+  for (let r=0; r<rows; r++){
+    const offset = (r % 2) * (bw/2);               // running bond
+    for (let i=-1; i<=cols; i++){
+      const x = i*bw + offset + mortar/2;
+      const y = r*bh + mortar/2;
+      const w = bw - mortar, h = bh - mortar;
+      // colour map: jittered brick + bevel edges
+      const j = (Math.random()-0.5) * 0.12;
+      const bc = base.clone().offsetHSL(0, 0, j);
+      c.fillStyle = `#${bc.getHexString()}`; c.fillRect(x,y,w,h);
+      c.fillStyle = 'rgba(255,255,255,0.10)'; c.fillRect(x,y,w,2);          // top highlight
+      c.fillStyle = 'rgba(0,0,0,0.18)';       c.fillRect(x,y+h-2,w,2);      // bottom shade
+      // bump map: brick face raised (light), with soft falloff toward mortar
+      const g = 200 + Math.floor(Math.random()*30);
+      b.fillStyle = `rgb(${g},${g},${g})`; b.fillRect(x,y,w,h);
+    }
+  }
+  const map = new THREE.CanvasTexture(col);
+  const bumpMap = new THREE.CanvasTexture(bmp);
+  for (const t of [map, bumpMap]){
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  }
+  return { map, bumpMap };
+}
+
+// Procedural roof-tile texture (pantile/shingle rows) drawn on canvas.
+function makeRoofTextures({ tile='#b5532e', groove='#5f2a16' } = {}){
+  const S = 256, rows = 9, cols = 9, rh = S/rows, tw = S/cols;
+  const col = document.createElement('canvas'); col.width = col.height = S;
+  const bmp = document.createElement('canvas'); bmp.width = bmp.height = S;
+  const c = col.getContext('2d'), b = bmp.getContext('2d');
+  c.fillStyle = groove; c.fillRect(0,0,S,S);
+  b.fillStyle = '#3a3a3a'; b.fillRect(0,0,S,S);
+  const base = new THREE.Color(tile);
+  for (let r=0; r<rows; r++){
+    const offset = (r % 2) * (tw/2);
+    for (let i=-1; i<=cols; i++){
+      const x = i*tw + offset, y = r*rh, w = tw-2, h = rh-1;
+      const tc = base.clone().offsetHSL(0, 0, (Math.random()-0.5)*0.10);
+      c.fillStyle = `#${tc.getHexString()}`;       // tile body, rounded bottom
+      c.beginPath();
+      c.moveTo(x+1, y); c.lineTo(x+w, y); c.lineTo(x+w, y+h*0.55);
+      c.quadraticCurveTo(x+w, y+h, x+1+w/2, y+h);
+      c.quadraticCurveTo(x+1, y+h, x+1, y+h*0.55);
+      c.closePath(); c.fill();
+      c.fillStyle = 'rgba(255,255,255,0.10)'; c.fillRect(x+1, y, w, 2);      // top highlight
+      c.fillStyle = 'rgba(0,0,0,0.30)';       c.fillRect(x+1, y+h-2, w, 3);  // overlap shadow
+      const g = Math.min(255, 195 + Math.floor(Math.random()*30));
+      b.fillStyle = `rgb(${g},${g},${g})`; b.fillRect(x+1, y, w, h-2);       // tile raised
+      b.fillStyle = '#2a2a2a'; b.fillRect(x+1, y+h-2, w, 3);                 // overlap groove
+    }
+  }
+  const map = new THREE.CanvasTexture(col), bumpMap = new THREE.CanvasTexture(bmp);
+  for (const t of [map, bumpMap]){
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  }
+  return { map, bumpMap };
+}
+
+// Two-slope (gable) roof: two textured slabs meeting at a ridge + gable end caps.
+function makeGableRoof({ lx, zhalf, rise, eaveY, tex, repeat=[4,2], gableColor='#aeb3b8' }){
+  const grp = new THREE.Group();
+  const a = Math.atan2(rise, zhalf), L = Math.hypot(zhalf, rise);
+  tex.map.repeat.set(repeat[0], repeat[1]); tex.bumpMap.repeat.copy(tex.map.repeat);
+  const mat = new THREE.MeshStandardMaterial({ map:tex.map, bumpMap:tex.bumpMap, bumpScale:0.04, roughness:0.9 });
+  for (const sign of [1,-1]){
+    const slab = new THREE.Mesh(new THREE.BoxGeometry(lx, 0.12, L), mat);
+    slab.rotation.x = sign * a;
+    slab.position.set(0, eaveY + rise/2, sign * zhalf/2);
+    slab.castShadow = slab.receiveShadow = true; grp.add(slab);
+  }
+  const shape = new THREE.Shape();
+  shape.moveTo(-zhalf,0); shape.lineTo(zhalf,0); shape.lineTo(0,rise); shape.closePath();
+  const triGeo = new THREE.ShapeGeometry(shape);
+  const triMat = new THREE.MeshStandardMaterial({ color:gableColor, roughness:0.95, side:THREE.DoubleSide });
+  for (const ex of [lx/2, -lx/2]){
+    const tri = new THREE.Mesh(triGeo, triMat);
+    tri.rotation.y = Math.PI/2; tri.position.set(ex, eaveY, 0); grp.add(tri);
+  }
+  return grp;
+}
+
+// Single-slope (shed / mono-pitch) roof: one textured slab high at -z + side fillers.
+function makeShedRoof({ lx, zhalf, rise, eaveY, tex, repeat=[4,2], sideColor='#8a3f2a' }){
+  const grp = new THREE.Group();
+  const span = zhalf*2, a = Math.atan2(rise, span), L = Math.hypot(span, rise);
+  tex.map.repeat.set(repeat[0], repeat[1]); tex.bumpMap.repeat.copy(tex.map.repeat);
+  const mat = new THREE.MeshStandardMaterial({ map:tex.map, bumpMap:tex.bumpMap, bumpScale:0.04, roughness:0.9 });
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(lx, 0.13, L), mat);
+  slab.rotation.x = a;                      // high at -z, low at +z
+  slab.position.set(0, eaveY + rise/2, 0);
+  slab.castShadow = slab.receiveShadow = true; grp.add(slab);
+  const shape = new THREE.Shape();           // wedge filler, high at -z
+  shape.moveTo(zhalf, rise); shape.lineTo(zhalf, 0); shape.lineTo(-zhalf, 0); shape.closePath();
+  const triGeo = new THREE.ShapeGeometry(shape);
+  const triMat = new THREE.MeshStandardMaterial({ color:sideColor, roughness:0.95, side:THREE.DoubleSide });
+  for (const ex of [lx/2, -lx/2]){
+    const tri = new THREE.Mesh(triGeo, triMat);
+    tri.rotation.y = Math.PI/2; tri.position.set(ex, eaveY, 0); grp.add(tri);
+  }
+  const back = new THREE.Mesh(new THREE.BoxGeometry(lx, rise, 0.12), triMat);
+  back.position.set(0, eaveY + rise/2, -zhalf);
+  back.castShadow = back.receiveShadow = true; grp.add(back);
+  return grp;
+}
+
+// Procedural fabric-bale texture: horizontal folded-cloth layers with seams.
+function makeFabricTextures({ base='#dad3c2' } = {}){
+  const S = 128;
+  const col = document.createElement('canvas'); col.width = col.height = S;
+  const bmp = document.createElement('canvas'); bmp.width = bmp.height = S;
+  const c = col.getContext('2d'), b = bmp.getContext('2d');
+  c.fillStyle = base; c.fillRect(0,0,S,S);
+  b.fillStyle = '#808080'; b.fillRect(0,0,S,S);
+  const baseCol = new THREE.Color(base), stripe = 8;
+  for (let y=0; y<S; y+=stripe){
+    const cc = baseCol.clone().offsetHSL((Math.random()-0.5)*0.03, 0, (Math.random()-0.5)*0.08);
+    c.fillStyle = `#${cc.getHexString()}`; c.fillRect(0, y, S, stripe-1);
+    c.fillStyle = 'rgba(255,255,255,0.10)'; c.fillRect(0, y, S, 1);
+    c.fillStyle = 'rgba(0,0,0,0.18)'; c.fillRect(0, y+stripe-2, S, 2);
+    b.fillStyle = '#cfcfcf'; b.fillRect(0, y, S, stripe-2);
+    b.fillStyle = '#3a3a3a'; b.fillRect(0, y+stripe-2, S, 2);
+  }
+  const map = new THREE.CanvasTexture(col), bumpMap = new THREE.CanvasTexture(bmp);
+  for (const t of [map, bumpMap]){
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  }
+  return { map, bumpMap };
+}
+const fabricTex = makeFabricTextures();
+const fabricBaleMat = new THREE.MeshStandardMaterial({
+  map:fabricTex.map, bumpMap:fabricTex.bumpMap, bumpScale:0.03, roughness:0.95 });
+
+function makeFactory() {
+  const g = new THREE.Group();
+  const base = new THREE.Mesh(new THREE.BoxGeometry(6,0.3,6),
+    new THREE.MeshStandardMaterial({ color:'#3a3f47' }));
+  base.position.y = 0.15; base.receiveShadow = true; g.add(base);
+  const fb = makeBrickTextures({ brickColor:'#a8503a', mortarColor:'#caa98c' });
+  fb.map.repeat.set(2.5, 1.6); fb.bumpMap.repeat.copy(fb.map.repeat);
+  const hall = new THREE.Mesh(new THREE.BoxGeometry(5,3.2,5),
+    new THREE.MeshStandardMaterial({ map:fb.map, bumpMap:fb.bumpMap, bumpScale:0.05, roughness:0.95 }));
+  hall.position.y = 1.9; hall.castShadow = hall.receiveShadow = true; g.add(hall);
+
+  const addWindow = (x,y,z,facingX) => g.add(orientPanel(makeWindowPanel(), x,y,z, facingX));
+  const wallY = 2.05;
+  for (const s of [-1.3, 0, 1.3]){
+    addWindow( 2.53, wallY, s, true);   // +X wall
+    addWindow(-2.53, wallY, s, true);   // -X wall
+    addWindow( s, wallY, -2.53, false); // back (-Z) wall
+  }
+  // front (+Z) wall: windows flanking the gear
+  addWindow(-1.6, wallY, 2.53, false);
+  addWindow( 1.6, wallY, 2.53, false);
+
+  const roof = makeShedRoof({ lx:5.4, zhalf:2.7, rise:1.3, eaveY:3.5,
+    tex: makeRoofTextures({ tile:'#9a4a2e', groove:'#52261a' }), repeat:[5,2.4], sideColor:'#8a3f2a' });
+  g.add(roof);
+  const cb = makeBrickTextures({ brickColor:'#8f4030', mortarColor:'#caa98c' });
+  cb.map.repeat.set(3, 4); cb.bumpMap.repeat.copy(cb.map.repeat);
+  const chimney = new THREE.Group();
+  const rOut = 0.45, rIn = 0.32, ch = 3;
+  const outer = new THREE.Mesh(new THREE.CylinderGeometry(rOut, 0.52, ch, 20, 1, true),
+    new THREE.MeshStandardMaterial({ map:cb.map, bumpMap:cb.bumpMap, bumpScale:0.05, roughness:0.95 }));
+  outer.castShadow = outer.receiveShadow = true;
+  const inner = new THREE.Mesh(new THREE.CylinderGeometry(rIn, rIn, ch, 20, 1, true),
+    new THREE.MeshStandardMaterial({ color:'#1a1410', roughness:1, side:THREE.DoubleSide }));
+  const rim = new THREE.Mesh(new THREE.RingGeometry(rIn, rOut, 20),
+    new THREE.MeshStandardMaterial({ color:'#3a2a22', roughness:1, side:THREE.DoubleSide }));
+  rim.rotation.x = -Math.PI/2; rim.position.y = ch/2;
+  chimney.add(outer, inner, rim);
+  chimney.position.set(1.6,4.5,-1.6); g.add(chimney);
+  g.userData.chimneyTop = new THREE.Vector3(1.6,6,-1.6);
+
+  const gear = new THREE.Group();
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(1,1,0.3,24),
+    new THREE.MeshStandardMaterial({ color:'#cbd5e1', metalness:.6, roughness:.4 }));
+  hub.rotation.x = Math.PI/2; gear.add(hub);
+  for (let i=0;i<8;i++){
+    const t = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,0.35),
+      new THREE.MeshStandardMaterial({ color:'#94a3b8', metalness:.6, roughness:.4 }));
+    const a = i/8*Math.PI*2; t.position.set(Math.cos(a)*1.15, Math.sin(a)*1.15, 0); t.rotation.z = a; gear.add(t);
+  }
+  gear.position.set(0,2.2,2.55); g.add(gear); g.userData.gear = gear;
+
+  const padX = 6;
+  const pad = new THREE.Mesh(new THREE.BoxGeometry(6,0.1,6),
+    new THREE.MeshStandardMaterial({ color:'#2a2f36' }));
+  pad.position.set(padX,0.05,0); pad.receiveShadow = true; g.add(pad);
+  g.userData.bales = []; g.userData.balePad = new THREE.Vector3(padX,0.1,0);
+  return g;
+}
+
+function makeField() {
+  const g = new THREE.Group();
+  const soil = new THREE.Mesh(new THREE.BoxGeometry(6,0.25,6),
+    new THREE.MeshStandardMaterial({ color:'#6b4a2b' }));
+  soil.position.y = 0.12; soil.receiveShadow = true; g.add(soil);
+  const crops = [];
+  const cropMat = new THREE.MeshStandardMaterial({ color:'#5fae3a' });
+  for (let cx=-2; cx<=2; cx++) for (let cz=-2; cz<=2; cz++){
+    const c = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.6,0.5), cropMat);
+    c.userData.h = 0.6; c.position.set(cx*1.1, 0.25, cz*1.1); c.castShadow = true;
+    g.add(c); crops.push(c);
+  }
+  g.userData.crops = crops;
+  return { group:g, crops, t: Math.random()*FIELD_CYCLE };
+}
+function setCropGrowth(crops, k){
+  for (const c of crops){
+    c.scale.y = 0.12 + k*0.88;
+    c.position.y = 0.25 + (c.userData.h * c.scale.y)/2 - c.userData.h*0.06;
+  }
+}
+
+const roadLineMat = new THREE.MeshStandardMaterial({ color:'#e7c44d' });
+function makeRoadTile(x,z){
+  const grp = new THREE.Group();
+  const m = new THREE.Mesh(new THREE.BoxGeometry(TILE, 0.08, TILE),
+    new THREE.MeshStandardMaterial({ color:'#3b4250' }));
+  m.position.y = 0.05; m.receiveShadow = true;
+  grp.add(m); grp.position.set(x, 0, z);
+  grp.userData = { tx:x, tz:z, lines:[] };
+  return grp;
+}
+// Recompute every tile's centre line from its road neighbours so the markings
+// follow straights, turns and junctions instead of always running along X.
+function refreshRoadLines(){
+  const dirs = [ {dx:TILE,dz:0}, {dx:-TILE,dz:0}, {dx:0,dz:TILE}, {dx:0,dz:-TILE} ];
+  for (const grp of game.roads.values()){
+    for (const l of grp.userData.lines) grp.remove(l);
+    grp.userData.lines = [];
+    const { tx, tz } = grp.userData;
+    const conn = dirs.filter(d => game.roads.has(`${tx+d.dx},${tz+d.dz}`));
+    const addSeg = (dx, dz) => {
+      const horiz = dx !== 0;
+      const geo = horiz ? new THREE.BoxGeometry(TILE/2+0.07, 0.04, 0.12)
+                        : new THREE.BoxGeometry(0.12, 0.04, TILE/2+0.07);
+      const seg = new THREE.Mesh(geo, roadLineMat);
+      seg.position.set(horiz ? Math.sign(dx)*TILE/4 : 0, 0.10,
+                       horiz ? 0 : Math.sign(dz)*TILE/4);
+      grp.add(seg); grp.userData.lines.push(seg);
+    };
+    if (conn.length === 0) addSeg(TILE, 0);            // isolated tile: short dash
+    else conn.forEach(d => addSeg(d.dx, d.dz));        // half-segment toward each neighbour
+  }
+}
+
+// fabric bales: tightly stacked grid filling the yard up to its volume limit
+function updateBales(){
+  const f = game.factory; if (!f) return;
+  const want = Math.min(FABRIC_CAP, Math.floor(fabric)), have = f.userData.bales.length;
+  const bw = 1.15, bh = 0.62, cell = bw + 0.05;
+  const ox = f.userData.balePad.x, oy = f.userData.balePad.y;
+  if (want > have){
+    for (let i=have;i<want;i++){
+      const per = STORE_COLS*STORE_ROWS, layer = Math.floor(i/per), inL = i%per;
+      const cx = inL % STORE_COLS, cz = Math.floor(inL/STORE_COLS);
+      const b = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bw), fabricBaleMat);
+      b.position.set(
+        ox + (cx - (STORE_COLS-1)/2)*cell,
+        oy + bh/2 + layer*bh,
+        (cz - (STORE_ROWS-1)/2)*cell);
+      b.castShadow = b.receiveShadow = true;
+      f.add(b); f.userData.bales.push(b);
+    }
+  } else if (want < have){
+    for (let i=have-1;i>=want;i--) f.remove(f.userData.bales[i]);
+    f.userData.bales.length = want;
+  }
+  if (want !== have) refreshShadows();
+}
+
+// smoke
+function spawnSmoke(o){
+  const m = new THREE.Mesh(new THREE.SphereGeometry(0.4,8,8),
+    new THREE.MeshStandardMaterial({ color:'#cfd6dd', transparent:true, opacity:0.7 }));
+  m.position.copy(o); m.userData.life = 0; scene.add(m); smokeParticles.push(m);
+}
+function updateSmoke(dt){
+  for (let i=smokeParticles.length-1;i>=0;i--){
+    const s = smokeParticles[i]; s.userData.life += dt;
+    s.position.y += dt*1.2; s.position.x += dt*0.3;
+    s.scale.setScalar(1 + s.userData.life*0.8);
+    s.material.opacity = Math.max(0, 0.7 - s.userData.life*0.35);
+    if (s.userData.life > 2){ scene.remove(s); smokeParticles.splice(i,1); }
+  }
+}
+
+// ===========================================================================
+// Placement / raycasting
+// ===========================================================================
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let ghost = null, ghostValid = true;
+const roadPreview = new THREE.Group(); scene.add(roadPreview);
+
+const snap = v => Math.round(v/TILE)*TILE;
+function groundPoint(e){
+  pointer.x = (e.clientX/innerWidth)*2 - 1;
+  pointer.y = -(e.clientY/innerHeight)*2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hit = raycaster.intersectObject(ground)[0];
+  return hit ? hit.point : null;
+}
+function inBounds(x,z,half){
+  return Math.abs(x)+half <= HALF_WORLD && Math.abs(z)+half <= HALF_WORLD;
+}
+function overlaps(x,z,half){
+  return footprints.some(f => {
+    const hx = f.hx ?? f.half, hz = f.hz ?? f.half;
+    return Math.abs(f.x-x) < hx+half && Math.abs(f.z-z) < hz+half;
+  });
+}
+function validPlacement(x,z,half){ return inBounds(x,z,half) && !overlaps(x,z,half); }
+
+function makeGhost(size){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(size,0.4,size),
+    new THREE.MeshStandardMaterial({ color:'#22c55e', transparent:true, opacity:0.45 }));
+  m.position.y = 0.2; return m;
+}
+
+// ===========================================================================
+// Tool selection
+// ===========================================================================
+const statusPill = document.getElementById('statusPill');
+const toolBtns = [...document.querySelectorAll('.tool[data-tool]')];
+
+function selectTool(tool){
+  if (tool === 'factory' && game.factory) return;           // already built
+  if (game.tool === tool) tool = null;                      // toggle off
+  game.tool = tool || null;
+
+  // cleanup
+  if (ghost){ scene.remove(ghost); ghost = null; }
+  game.roadAnchor = null; roadPreview.clear();
+
+  toolBtns.forEach(b => b.classList.toggle('active', b.dataset.tool === game.tool && game.tool));
+
+  if (game.tool === 'factory'){ ghost = makeGhost(6); scene.add(ghost);
+    setStatus('Click a tile to place the Fabric Factory'); }
+  else if (game.tool === 'field'){ ghost = makeGhost(6); scene.add(ghost);
+    setStatus('Click to place a cotton field — keep clicking to add more'); }
+  else if (game.tool === 'depot'){ ghost = makeGhost(6); scene.add(ghost);
+    setStatus('Click to place a transport depot — connect it to roads'); }
+  else if (game.tool === 'road'){
+    setStatus('Click a start tile, then an end tile to lay road (Esc to finish)'); }
+  else setStatus('Cursor mode · drag to orbit · scroll to zoom');
+  requestRender();
+}
+toolBtns.forEach(b => b.addEventListener('click', ()=> selectTool(b.dataset.tool || null)));
+document.getElementById('toolCursor').addEventListener('click', ()=> selectTool(null));
+addEventListener('keydown', e => { if (e.key === 'Escape') selectTool(null); });
+function setStatus(t){ statusPill.textContent = t; }
+
+// ===========================================================================
+// Pointer interaction (click vs orbit-drag detection)
+// ===========================================================================
+let downX = 0, downY = 0, downValid = false;
+renderer.domElement.addEventListener('pointerdown', e => {
+  if (e.button !== 0) return;
+  downX = e.clientX; downY = e.clientY; downValid = true;
+});
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!game.tool) return;
+  const p = groundPoint(e); if (!p) return;
+  const gx = snap(p.x), gz = snap(p.z);
+  if (ghost){
+    ghost.position.set(gx, 0.2, gz);
+    ghostValid = validPlacement(gx, gz, 3);
+    ghost.material.color.set(ghostValid ? '#22c55e' : '#ef4444');
+  } else if (game.tool === 'road' && game.roadAnchor){
+    drawRoadPreview(game.roadAnchor, { x:gx, z:gz });
+  }
+  requestRender();
+});
+renderer.domElement.addEventListener('pointerup', e => {
+  if (e.button !== 0 || !downValid) return;
+  downValid = false;
+  if (Math.hypot(e.clientX-downX, e.clientY-downY) > 5) return; // was an orbit drag
+  if (!game.tool) return;
+  const p = groundPoint(e); if (!p) return;
+  handleClick(snap(p.x), snap(p.z));
+});
+renderer.domElement.addEventListener('contextmenu', e => {
+  if (game.tool === 'road' && game.roadAnchor){ e.preventDefault(); game.roadAnchor = null; roadPreview.clear(); requestRender(); }
+});
+
+function handleClick(gx, gz){
+  if (game.tool === 'factory'){
+    if (!validPlacement(gx,gz,3)){ flashStatus('Blocked — overlaps or off the map'); return; }
+    placeFactory(gx,gz);
+  } else if (game.tool === 'field'){
+    if (!validPlacement(gx,gz,3)){ flashStatus('Blocked — overlaps or off the map'); return; }
+    placeField(gx,gz);
+  } else if (game.tool === 'depot'){
+    if (!validPlacement(gx,gz,3)){ flashStatus('Blocked — overlaps or off the map'); return; }
+    placeDepot(gx,gz);
+  } else if (game.tool === 'road'){
+    if (!game.roadAnchor){ game.roadAnchor = { x:gx, z:gz }; setStatus('Now click the end tile (Esc/right-click to cancel)'); }
+    else { commitRoad(game.roadAnchor, { x:gx, z:gz }); game.roadAnchor = { x:gx, z:gz }; roadPreview.clear(); }
+  }
+}
+
+// ===========================================================================
+// Build actions
+// ===========================================================================
+function placeFactory(x,z){
+  const f = makeFactory(); f.position.set(x,0,z); scene.add(f);
+  game.factory = f;
+  footprints.push({ x, z, half:3 });        // factory
+  footprints.push({ x:x+6, z, half:3 });    // fabric storage yard
+  document.getElementById('toolFactory').disabled = true;
+  document.getElementById('ctFactory').style.display = 'block';
+  document.getElementById('factoryPanel').style.display = 'block';
+  game.nodes.push({ name:'Fabric Factory', center:new THREE.Vector3(x, 0, z),
+    getStock:()=>fabric,
+    take:()=>{ if (fabric > 0){ fabric--; updateBales(); renderResources(); maybeResume(); return true; } return false; } });
+  refreshVehicleSelects();
+  log('Fabric Factory constructed.', 'ok');
+  controls.target.set(x,1,z);
+  selectTool(null); refreshShadows();
+}
+function placeField(x,z){
+  const fld = makeField(); fld.group.position.set(x,0,z); scene.add(fld.group);
+  game.fields.push(fld); footprints.push({ x, z, half:3 });
+  updateCounts(); log('Cotton field plowed.', 'ok'); refreshShadows();
+}
+function commitRoad(a,b){
+  let n = 0;
+  for (const t of pathTiles(a,b)){
+    const key = `${t.x},${t.z}`;
+    if (game.roads.has(key)) continue;
+    const tile = makeRoadTile(t.x, t.z); scene.add(tile);
+    game.roads.set(key, tile); n++;
+  }
+  if (n) { refreshRoadLines(); updateCounts(); refreshShadows(); }
+}
+function pathTiles(a,b){
+  const tiles = []; let x = a.x, z = a.z;
+  const sx = Math.sign(b.x - x);
+  while (x !== b.x){ tiles.push({x,z}); x += sx*TILE; }
+  const sz = Math.sign(b.z - z);
+  while (z !== b.z){ tiles.push({x,z}); z += sz*TILE; }
+  tiles.push({ x:b.x, z:b.z });
+  return tiles;
+}
+function drawRoadPreview(a,b){
+  roadPreview.clear();
+  for (const t of pathTiles(a,b)){
+    const m = new THREE.Mesh(new THREE.BoxGeometry(TILE,0.1,TILE),
+      new THREE.MeshStandardMaterial({ color:'#fbbf24', transparent:true, opacity:0.5 }));
+    m.position.set(t.x, 0.07, t.z); roadPreview.add(m);
+  }
+}
+
+// ===========================================================================
+// Production control
+// ===========================================================================
+const startBtn = document.getElementById('startBtn');
+const stopBtn  = document.getElementById('stopBtn');
+const factoryBadge = document.getElementById('factoryBadge');
+const factoryAlert = document.getElementById('factoryAlert');
+const fabricOut = document.getElementById('fabricOut');
+
+startBtn.addEventListener('click', ()=>{
+  if (!game.factory || game.producing) return;
+  if (fabric >= FABRIC_CAP){ flashStatus('Storage full — empty it first'); return; }
+  if (!canAfford()){ flashStatus('Not enough resources to start'); return; }
+  game.producing = true; game.blockedByStorage = false; game.cycleTimer = 0;
+  startBtn.style.display = 'none'; stopBtn.style.display = 'block';
+  setBadge('running'); setStatus('Production running…'); log('Production started.', 'ok');
+});
+stopBtn.addEventListener('click', ()=> stopProduction('Production stopped.'));
+function stopProduction(msg, state='idle'){
+  game.producing = false;
+  game.blockedByStorage = (state === 'blocked');
+  startBtn.style.display = 'block'; stopBtn.style.display = 'none';
+  setBadge(state); if (msg){ log(msg, 'warn'); setStatus(msg); }
+}
+// resume automatically once a truck frees storage space
+function maybeResume(){
+  if (!game.blockedByStorage || game.producing) return;
+  if (fabric < FABRIC_CAP && canAfford()){
+    game.producing = true; game.blockedByStorage = false; game.cycleTimer = 0;
+    startBtn.style.display = 'none'; stopBtn.style.display = 'block';
+    setBadge('running'); log('Production resumed — storage freed.', 'ok');
+  } else if (fabric < FABRIC_CAP){
+    game.blockedByStorage = false; setBadge('idle');
+  }
+}
+function setBadge(s){
+  factoryBadge.textContent = s;
+  factoryBadge.className = 'badge ' + (s === 'running' ? 'run' : s === 'blocked' ? 'blocked' : 'idle');
+  factoryAlert.style.display = s === 'blocked' ? 'block' : 'none';
+}
+const canAfford = () => Object.entries(RECIPE).every(([k,v]) => RES[k].amount >= v);
+function consumeCycle(){ for (const [k,v] of Object.entries(RECIPE)) RES[k].amount -= v; fabric += 1; }
+
+// ===========================================================================
+// HUD
+// ===========================================================================
+function renderResources(){
+  const el = document.getElementById('topbar');
+  el.innerHTML = '';
+  for (const [k,r] of Object.entries(RES)){
+    const low = r.amount < (RECIPE[k]||1);
+    el.innerHTML += `<div class="chip panel"><span class="dot" style="background:${r.color}"></span>
+      <span class="nm">${r.name}</span><span class="vl ${low?'low':''}">${Math.floor(r.amount)}</span></div>`;
+  }
+  el.innerHTML += `<div class="chip panel out"><span class="dot" style="background:#eef2f7"></span>
+    <span class="nm">Fabric</span><span class="vl">${Math.floor(fabric)}</span></div>`;
+  if (game.vehicles.length || delivered)
+    el.innerHTML += `<div class="chip panel out"><span class="dot" style="background:#34d399"></span>
+      <span class="nm">Delivered</span><span class="vl">${delivered}</span></div>`;
+  fabricOut.textContent = `${Math.floor(fabric)} / ${FABRIC_CAP}`;
+}
+function updateCounts(){
+  const cf = document.getElementById('ctField'), cr = document.getElementById('ctRoad');
+  cf.textContent = game.fields.length; cf.style.display = game.fields.length ? 'block':'none';
+  cr.textContent = game.roads.size;   cr.style.display = game.roads.size ? 'block':'none';
+}
+function log(msg, cls=''){
+  const el = document.getElementById('log');
+  const line = document.createElement('div');
+  line.className = 'log-line ' + cls; line.textContent = msg;
+  el.prepend(line); while (el.children.length > 6) el.removeChild(el.lastChild);
+}
+let flashTimer = null;
+function flashStatus(t){ setStatus(t); clearTimeout(flashTimer);
+  flashTimer = setTimeout(()=> setStatus(game.tool ? 'Click to place…' : 'Cursor mode'), 1400); }
+
+// ===========================================================================
+// Transport: depot, trucks, road pathfinding
+// ===========================================================================
+const TRUCK_SPEED = 6, LANE = 0.45, LOAD_TIME = 0.6;
+let vehSeq = 0;
+
+function makeDepot(){
+  const g = new THREE.Group();
+  const apron = new THREE.Mesh(new THREE.BoxGeometry(6,0.12,6),
+    new THREE.MeshStandardMaterial({ color:'#3a4048', roughness:0.95 }));
+  apron.position.y = 0.06; apron.receiveShadow = true; g.add(apron);
+  const lineMat = new THREE.MeshStandardMaterial({ color:'#d8c150' });
+  for (let i=-1;i<=1;i++){
+    const l = new THREE.Mesh(new THREE.BoxGeometry(0.08,0.02,3.2), lineMat);
+    l.position.set(i*1.5, 0.13, 0.7); g.add(l);
+  }
+  const office = new THREE.Mesh(new THREE.BoxGeometry(2.4,1.8,2),
+    new THREE.MeshStandardMaterial({ color:'#c0744a' }));
+  office.position.set(-1.6,0.9,-2); office.castShadow = true; g.add(office);
+  const oroof = new THREE.Mesh(new THREE.BoxGeometry(2.6,0.2,2.2),
+    new THREE.MeshStandardMaterial({ color:'#7a4a30' }));
+  oroof.position.set(-1.6,1.9,-2); oroof.castShadow = true; g.add(oroof);
+  return g;
+}
+
+// open-hull truck, cab facing +z
+function makeTruck(){
+  const g = new THREE.Group();
+  const cabMat = new THREE.MeshStandardMaterial({ color:'#2f6fb0', metalness:0.3, roughness:0.5 });
+  const hullMat = new THREE.MeshStandardMaterial({ color:'#3a4654', roughness:0.7 });
+  const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.0,0.3,2.2),
+    new THREE.MeshStandardMaterial({ color:'#222831' }));
+  chassis.position.y = 0.45; g.add(chassis);
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(0.95,0.7,0.8), cabMat);
+  cab.position.set(0,0.85,0.7); g.add(cab);
+  const ws = new THREE.Mesh(new THREE.BoxGeometry(0.78,0.4,0.05), glassMat);
+  ws.position.set(0,0.95,1.11); g.add(ws);
+  const bedFloor = new THREE.Mesh(new THREE.BoxGeometry(0.95,0.1,1.3), hullMat);
+  bedFloor.position.set(0,0.62,-0.4); g.add(bedFloor);
+  const wH = 0.45;
+  const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.08,wH,1.3), hullMat);
+  sideL.position.set(-0.45,0.62+wH/2,-0.4); g.add(sideL);
+  const sideR = sideL.clone(); sideR.position.x = 0.45; g.add(sideR);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.95,wH,0.08), hullMat);
+  back.position.set(0,0.62+wH/2,-1.0); g.add(back);
+  const frontW = back.clone(); frontW.position.z = 0.2; g.add(frontW);
+  const wheelMat = new THREE.MeshStandardMaterial({ color:'#15181d' });
+  for (const wx of [-0.5,0.5]) for (const wz of [0.6,-0.7]){
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,0.2,12), wheelMat);
+    w.rotation.z = Math.PI/2; w.position.set(wx,0.28,wz); g.add(w);
+  }
+  const cargo = new THREE.Mesh(new THREE.BoxGeometry(0.82,0.4,1.0), fabricBaleMat);
+  cargo.position.set(0,0.85,-0.4); cargo.visible = false; g.add(cargo);
+  g.userData.cargoMesh = cargo;
+  g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  return g;
+}
+
+function placeDepot(x,z){
+  const grp = makeDepot(); grp.position.set(x,0,z); scene.add(grp);
+  const depot = { pos:new THREE.Vector3(x,0,z), group:grp, trucks:[],
+    parkingFor:(i)=> new THREE.Vector3(x + ((i%3)-1)*1.5, 0.09, z + 0.7 + Math.floor(i/3)*1.6) };
+  game.depots.push(depot);
+  footprints.push({ x, z, half:3 });
+  const ct = document.getElementById('ctDepot');
+  ct.textContent = game.depots.length; ct.style.display = 'block';
+  document.getElementById('depotPanel').style.display = 'block';
+  log('Transport depot built.', 'ok');
+  refreshShadows(); selectTool(null);
+}
+
+// --- road-tile pathfinding ---
+function nearestRoadTile(p){
+  let best = null, bd = Infinity;
+  for (const key of game.roads.keys()){
+    const [x,z] = key.split(',').map(Number);
+    const d = Math.hypot(x-p.x, z-p.z);
+    if (d < bd){ bd = d; best = { x, z }; }
+  }
+  return (best && bd <= 10) ? best : null;
+}
+function roadPath(a,b){
+  if (!a || !b) return null;
+  const sk = `${a.x},${a.z}`, gk = `${b.x},${b.z}`;
+  if (!game.roads.has(sk) || !game.roads.has(gk)) return null;
+  if (sk === gk) return [{ x:a.x, z:a.z }];
+  const prev = new Map([[sk, null]]), q = [sk];
+  while (q.length){
+    const cur = q.shift(); if (cur === gk) break;
+    const [cx,cz] = cur.split(',').map(Number);
+    for (const [dx,dz] of [[TILE,0],[-TILE,0],[0,TILE],[0,-TILE]]){
+      const nk = `${cx+dx},${cz+dz}`;
+      if (game.roads.has(nk) && !prev.has(nk)){ prev.set(nk, cur); q.push(nk); }
+    }
+  }
+  if (!prev.has(gk)) return null;
+  const out = []; let c = gk;
+  while (c){ const [x,z] = c.split(',').map(Number); out.push({ x, z }); c = prev.get(c); }
+  return out.reverse();
+}
+// road-tile path -> world waypoints offset to the right-hand lane
+function buildWaypoints(tiles){
+  return tiles.map((cur,i) => {
+    let dx, dz;
+    if (i < tiles.length-1){ dx = tiles[i+1].x-cur.x; dz = tiles[i+1].z-cur.z; }
+    else { dx = cur.x-tiles[i-1].x; dz = cur.z-tiles[i-1].z; }
+    const len = Math.hypot(dx,dz) || 1; dx/=len; dz/=len;
+    return new THREE.Vector3(cur.x + (-dz)*LANE, 0.09, cur.z + dx*LANE);
+  });
+}
+
+// --- vehicle lifecycle ---
+function createTruck(depot){
+  const v = {
+    id: ++vehSeq, name: `Truck ${vehSeq}`, depot,
+    mesh: makeTruck(), src: null, dst: null,
+    running: false, cargo: 0, state: 'idle', statusText: 'Idle',
+    leg: 'toSrc', wp: [], wpi: 0, loadTimer: 0, retryTimer: 0, els: null,
+  };
+  v.mesh.position.copy(depot.parkingFor(depot.trucks.length));
+  scene.add(v.mesh); depot.trucks.push(v); game.vehicles.push(v);
+  buildVehicleCard(v); refreshShadows(); requestRender();
+  log(`${v.name} created at depot.`, 'ok');
+}
+function toggleVehicle(v){
+  if (v.running){ stopVehicle(v); return; }
+  if (!v.src || !v.dst){ flashStatus('Set source and destination first'); return; }
+  v.running = true; v.leg = v.cargo > 0 ? 'toDst' : 'toSrc';
+  v.els.start.textContent = '■ Stop'; v.els.start.classList.replace('go','stop');
+  setVehBadge(v, 'run'); planLeg(v); requestRender();
+}
+function stopVehicle(v){
+  v.running = false; v.state = 'idle';
+  v.els.start.textContent = '▶ Start'; v.els.start.classList.replace('stop','go');
+  setVehBadge(v, 'idle'); vstat(v, 'Stopped');
+}
+function planLeg(v){
+  const target = v.leg === 'toSrc' ? v.src : v.dst;
+  const tiles = roadPath(nearestRoadTile(v.mesh.position), nearestRoadTile(target.center));
+  if (!tiles){
+    v.state = 'waiting'; v.retryTimer = 1.0;
+    setVehBadge(v, 'warn'); vstat(v, '⚠ No road connection', 'warn'); return;
+  }
+  v.wp = buildWaypoints(tiles); v.wpi = 0; v.state = 'driving';
+  setVehBadge(v, 'run');
+  vstat(v, v.leg === 'toSrc' ? 'Driving to source' : 'Delivering', 'go');
+}
+function updateVehicles(dt){
+  let moved = false;
+  for (const v of game.vehicles){
+    if (!v.running) continue;
+    if (v.state === 'waiting'){
+      v.retryTimer -= dt; if (v.retryTimer <= 0){ v.retryTimer = 1.0; planLeg(v); }
+    } else if (v.state === 'loading' || v.state === 'unloading'){
+      v.loadTimer -= dt; if (v.loadTimer <= 0) finishTransfer(v);
+    } else if (v.state === 'driving'){
+      driveStep(v, dt); moved = true;
+    }
+  }
+  return moved;
+}
+function driveStep(v, dt){
+  if (v.wpi >= v.wp.length){ arriveAtTarget(v); return; }
+  const tp = v.wp[v.wpi], pos = v.mesh.position;
+  const dx = tp.x-pos.x, dz = tp.z-pos.z, d = Math.hypot(dx,dz), step = TRUCK_SPEED*dt;
+  if (d <= step){ pos.x = tp.x; pos.z = tp.z; v.wpi++; }
+  else { pos.x += dx/d*step; pos.z += dz/d*step; v.mesh.rotation.y = Math.atan2(dx,dz); }
+}
+function arriveAtTarget(v){
+  if (v.leg === 'toSrc'){ v.state = 'loading'; v.loadTimer = LOAD_TIME; vstat(v, 'Loading', 'go'); }
+  else { v.state = 'unloading'; v.loadTimer = LOAD_TIME; vstat(v, 'Unloading', 'go'); }
+}
+function finishTransfer(v){
+  if (v.leg === 'toSrc'){
+    if (v.cargo < 1 && v.src.take && v.src.take()){ v.cargo = 1; setCargoVisual(v, true); }
+    if (v.cargo < 1){ v.state = 'waiting'; v.retryTimer = 1.0;
+      setVehBadge(v, 'warn'); vstat(v, 'Waiting for fabric at source', 'warn'); return; }
+    v.leg = 'toDst'; planLeg(v);
+  } else {
+    if (v.cargo > 0 && v.dst.give){ v.dst.give(); v.cargo = 0; setCargoVisual(v, false); }
+    v.leg = 'toSrc'; planLeg(v);
+  }
+}
+function setCargoVisual(v, on){ v.mesh.userData.cargoMesh.visible = on; requestRender(); }
+
+// --- vehicle UI ---
+const createTruckBtn = document.getElementById('createTruckBtn');
+createTruckBtn.addEventListener('click', ()=>{
+  if (!game.depots.length){ flashStatus('Build a depot first'); return; }
+  createTruck(game.depots[game.depots.length-1]);
+});
+function fillSelect(sel, role){
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">—</option>';
+  game.nodes.forEach((n,i) => {
+    const ok = role === 'source' ? !!n.take : !!n.give;
+    if (ok){ const o = document.createElement('option'); o.value = i; o.textContent = n.name; sel.appendChild(o); }
+  });
+  sel.value = cur;
+}
+function refreshVehicleSelects(){
+  for (const v of game.vehicles){
+    fillSelect(v.els.src, 'source'); fillSelect(v.els.dst, 'sink');
+  }
+}
+function buildVehicleCard(v){
+  const card = document.createElement('div'); card.className = 'vcard';
+  card.innerHTML = `
+    <div class="vh"><span>🚚 ${v.name}</span><span class="badge idle" data-badge>idle</span></div>
+    <div class="vrow"><label>From</label><select data-src></select></div>
+    <div class="vrow"><label>To</label><select data-dst></select></div>
+    <button class="pbtn go" data-start>▶ Start</button>
+    <div class="vstatus" data-status>Idle</div>`;
+  document.getElementById('vehList').appendChild(card);
+  v.els = {
+    badge: card.querySelector('[data-badge]'), src: card.querySelector('[data-src]'),
+    dst: card.querySelector('[data-dst]'), start: card.querySelector('[data-start]'),
+    status: card.querySelector('[data-status]'),
+  };
+  fillSelect(v.els.src, 'source'); fillSelect(v.els.dst, 'sink');
+  v.els.src.onchange = ()=> v.src = game.nodes[+v.els.src.value] || null;
+  v.els.dst.onchange = ()=> v.dst = game.nodes[+v.els.dst.value] || null;
+  v.els.start.onclick = ()=> toggleVehicle(v);
+  document.getElementById('vehiclesPanel').style.display = 'block';
+  document.getElementById('vehCount').textContent = game.vehicles.length;
+}
+function setVehBadge(v, kind){
+  v.els.badge.textContent = kind === 'run' ? 'running' : kind === 'warn' ? 'waiting' : 'idle';
+  v.els.badge.className = 'badge ' + (kind === 'run' ? 'run' : kind === 'warn' ? 'blocked' : 'idle');
+}
+function vstat(v, text, cls=''){
+  v.statusText = text;
+  if (v.els){ v.els.status.textContent = text; v.els.status.className = 'vstatus ' + cls; }
+}
+
+// ===========================================================================
+// Loop
+// ===========================================================================
+const clock = new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, clock.getDelta());
+
+  // fields grow & harvest cotton into the warehouse
+  let resChanged = false;
+  for (const fld of game.fields){
+    fld.t += dt;
+    setCropGrowth(fld.crops, Math.min(1, fld.t/FIELD_CYCLE));
+    if (fld.t >= FIELD_CYCLE){
+      fld.t = 0;
+      const before = RES.cotton.amount;
+      RES.cotton.amount = Math.min(RES.cotton.max, RES.cotton.amount + FIELD_YIELD);
+      if (RES.cotton.amount !== before) resChanged = true;
+    }
+  }
+
+  // factory
+  if (game.factory && game.producing){
+    game.factory.userData.gear.rotation.z -= dt*2.5;
+    game.cycleTimer += dt;
+    if (Math.random() < dt*4)
+      spawnSmoke(game.factory.userData.chimneyTop.clone().add(game.factory.position));
+    if (game.cycleTimer >= CYCLE_SECONDS){
+      game.cycleTimer -= CYCLE_SECONDS;
+      const outOf = () => Object.keys(RECIPE).find(k => RES[k].amount < RECIPE[k]);
+      if (fabric >= FABRIC_CAP){
+        stopProduction('Storage full — production blocked.', 'blocked');
+      } else if (!canAfford()){
+        stopProduction(`Out of ${RES[outOf()].name}! Production halted.`);
+      } else {
+        consumeCycle(); resChanged = true; updateBales();
+        if (fabric >= FABRIC_CAP) stopProduction('Storage full — production blocked.', 'blocked');
+        else if (!canAfford()) stopProduction(`Out of ${RES[outOf()].name}! Production halted.`);
+      }
+    }
+  }
+  if (resChanged) renderResources();
+
+  const vehiclesMoved = updateVehicles(dt);
+
+  const hadSmoke = smokeParticles.length > 0;
+  updateSmoke(dt);
+
+  if (controls.update()) dirty = true;                      // camera moved (incl. damping)
+  if (game.fields.length || game.producing || hadSmoke || vehiclesMoved) dirty = true;
+  if (dirty){ renderer.render(scene, camera); dirty = false; }
+}
+
+addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  requestRender();
+});
+
+renderResources();
+refreshShadows();
+animate();
+</script>
+</body>
+</html>
