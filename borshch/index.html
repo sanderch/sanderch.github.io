@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Ukrainian borshch explained layer by layer: scroll to take the pot apart.">
+<title>Borshch, Layer by Layer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oranienbaum&family=Commissioner:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F7F2F3; --ink:#24161B; --muted:#6B5860; --beet:#9C1C3F; --dill:#4D7438; --rule:#E2D4D8;
+  --pot:#FBFAF7; --pot-line:#3A262D; --pot-inner:#3B1A24; --chip:#EFE5E8;
+  --display:"Oranienbaum","Cormorant Garamond",Georgia,"Times New Roman",serif;
+  --body:"Commissioner","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#170F12; --ink:#F2E7EA; --muted:#B19BA3; --beet:#E45C80; --dill:#93BE74; --rule:#3A2A30;
+    --pot:#2B2126; --pot-line:#E6D6DC; --pot-inner:#0E080A; --chip:#241A1E;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#170F12; --ink:#F2E7EA; --muted:#B19BA3; --beet:#E45C80; --dill:#93BE74; --rule:#3A2A30;
+  --pot:#2B2126; --pot-line:#E6D6DC; --pot-inner:#0E080A; --chip:#241A1E;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6;margin:0}
+.wrap{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(24px,4vw,64px);max-width:1240px;margin:0 auto;padding-inline:clamp(16px,3vw,40px)}
+.stage{position:sticky;top:env(safe-area-inset-top,0px);height:100vh;height:100dvh;display:flex;flex-direction:column;justify-content:center;gap:10px}
+.stage svg{width:100%;height:auto;max-height:calc(100dvh - 80px);display:block}
+.caption{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
+.caption b{color:var(--beet);font-weight:500}
+
+.step{min-height:88vh;display:flex;flex-direction:column;justify-content:center;gap:18px;padding-block:10vh;max-width:34em}
+.step.intro{min-height:100vh;padding-block:12vh 8vh}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--beet);margin:0}
+h1,h2{font-family:var(--display);font-weight:400;line-height:1.02;margin:0;text-wrap:balance;letter-spacing:-.005em}
+h1{font-size:clamp(56px,8vw,104px)}
+h1 .uk{display:block;color:var(--beet);font-size:.62em;margin-top:.12em}
+h2{font-size:clamp(38px,4.6vw,58px)}
+h2 .uk{font-size:.55em;color:var(--muted);margin-left:.4em;white-space:nowrap}
+p{margin:0}
+.lead{font-size:clamp(18px,1.6vw,20px);color:var(--ink)}
+.step p+p{margin-top:2px}
+.muted{color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:10px}
+.facts div{background:var(--bg);padding:12px 14px}
+.facts dt{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-family:var(--display);font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.meta span{font-family:var(--mono);font-size:12.5px;background:var(--chip);border-radius:3px;padding:4px 9px;color:var(--ink)}
+.cue{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px;margin-top:14px}
+.cue::after{content:"";width:1px;height:34px;background:var(--muted);animation:drip 2.2s ease-in-out infinite;transform-origin:top}
+@keyframes drip{0%{transform:scaleY(.2);opacity:.2}50%{transform:scaleY(1);opacity:1}100%{transform:scaleY(.2);opacity:.2}}
+.variants{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:0;border-top:1px solid var(--rule)}
+.variants li{display:grid;grid-template-columns:9.5em minmax(0,1fr);gap:14px;padding:11px 0;border-bottom:1px solid var(--rule)}
+.variants b{font-weight:600}
+footer{grid-column:1/-1;padding-block:28px 40px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+/* svg */
+.lbl{font-family:var(--mono);font-size:12.5px;fill:var(--ink);letter-spacing:.06em}
+.lbl-line{stroke:var(--muted);stroke-width:1}
+.layer{transition:opacity .35s ease}
+.hl{fill:none;stroke:var(--ink);stroke-width:1.6;transition:opacity .35s ease}
+.steam path{fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;opacity:0;animation:rise 4.5s ease-in-out infinite}
+.steam path:nth-child(2){animation-delay:1.4s}.steam path:nth-child(3){animation-delay:2.8s}
+@keyframes rise{0%{opacity:0;transform:translateY(12px)}35%{opacity:.55}100%{opacity:0;transform:translateY(-26px)}}
+
+@media (max-width:820px){
+  body{font-size:16px}
+  .wrap{grid-template-columns:minmax(0,1fr);gap:0}
+  .stage{height:44vh;height:44dvh;z-index:2;background:var(--bg);border-bottom:1px solid var(--rule);padding-block:6px}
+  .stage svg{max-height:calc(44dvh - 34px)}
+  .step{min-height:74vh;padding-block:7vh}
+  .step.intro{min-height:auto;padding-block:5vh 12vh}
+  .variants li{grid-template-columns:minmax(0,1fr);gap:2px}
+  .facts dd{font-size:21px}
+}
+@media (prefers-reduced-motion:reduce){
+  .steam path,.cue::after{animation:none}
+  .steam path{opacity:.35}
+  .layer,.hl{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage" aria-hidden="true">
+    <svg id="pot" viewBox="0 0 520 624" role="img" aria-label="Borshch pot separating into its ingredient layers"></svg>
+    <div class="caption" id="caption">The whole pot</div>
+  </div>
+
+  <main class="copy">
+    <section class="step intro" id="intro">
+      <p class="kicker">Ukrainian national dish</p>
+      <h1>Borshch<span class="uk">борщ</span></h1>
+      <p class="lead">A sour, beet-red soup cooked in a big pot for the whole family. Every household has its own version, but the structure is the same: a rich broth, a lot of vegetables, a sour note, and a spoon of smetana on top.</p>
+      <p class="muted">The name most likely comes from <i>borshchivnyk</i>, hogweed, a sour wild plant that went into the pot long before beets did. In 2022 UNESCO added the culture of Ukrainian borshch cooking to its list of intangible heritage in need of urgent safeguarding.</p>
+      <dl class="facts">
+        <div><dt>Pot size</dt><dd>4–6 L</dd></div>
+        <div><dt>Cooking time</dt><dd>~2½ h</dd></div>
+        <div><dt>Layers</dt><dd>8</dd></div>
+      </dl>
+      <p class="cue">Scroll to take the pot apart</p>
+    </section>
+
+    <section class="step ing" data-i="0">
+      <p class="kicker">01 · The base</p>
+      <h2>Broth<span class="uk">бульйон</span></h2>
+      <p class="lead">Everything starts with meat on the bone, usually pork ribs or beef brisket, covered with cold water and brought slowly to a simmer.</p>
+      <p class="muted">The foam is skimmed off so the broth stays clear. A bay leaf, peppercorns and a whole onion often go in early. For the Lenten version, the broth is made from dried mushrooms and beans instead.</p>
+      <div class="meta"><span>1½–2 h</span><span>gentle simmer</span><span>skim often</span></div>
+    </section>
+
+    <section class="step ing" data-i="1">
+      <p class="kicker">02 · The body</p>
+      <h2>Potatoes<span class="uk">картопля</span></h2>
+      <p class="lead">Diced potatoes go into the strained broth first, because they need the longest to cook.</p>
+      <p class="muted">They soften the sharpness of the finished soup and make it filling. Some cooks mash one potato against the side of the pot to thicken the broth slightly.</p>
+      <div class="meta"><span>2 cm cubes</span><span>10–15 min</span></div>
+    </section>
+
+    <section class="step ing" data-i="2">
+      <p class="kicker">03 · The heart</p>
+      <h2>Beets<span class="uk">буряк</span></h2>
+      <p class="lead">Beets give borshch its colour and its earthy sweetness. They are cut into thin strips or coarsely grated and stewed separately, not boiled in the broth.</p>
+      <p class="muted">A splash of vinegar or lemon juice while they stew keeps the colour a deep ruby. Without acid and with too much heat, the red pigment fades to brown.</p>
+      <div class="meta"><span>julienne or grated</span><span>+ acid</span><span>stew 15–20 min</span></div>
+    </section>
+
+    <section class="step ing" data-i="3">
+      <p class="kicker">04 · The flavour base</p>
+      <h2>Carrot &amp; onion<span class="uk">засмажка</span></h2>
+      <p class="lead">Zasmazhka is the sauté of chopped onion and grated carrot, cooked slowly in sunflower oil or rendered salo until soft and golden.</p>
+      <p class="muted">It adds sweetness and a rounded, toasty depth. Many cooks combine it with the stewed beets in one pan before it all goes into the pot.</p>
+      <div class="meta"><span>sunflower oil or salo</span><span>low heat</span><span>8–10 min</span></div>
+    </section>
+
+    <section class="step ing" data-i="4">
+      <p class="kicker">05 · The sour note</p>
+      <h2>Tomato<span class="uk">томат</span></h2>
+      <p class="lead">Tomato paste or grated fresh tomatoes are stirred into the sauté and cooked down for a few minutes.</p>
+      <p class="muted">Together with the acid in the beets, this gives borshch the sourness that defines it. A good borshch balances sour, sweet and savoury, and none of the three should dominate.</p>
+      <div class="meta"><span>2–3 tbsp paste</span><span>or 2–3 ripe tomatoes</span></div>
+    </section>
+
+    <section class="step ing" data-i="5">
+      <p class="kicker">06 · The texture</p>
+      <h2>Cabbage<span class="uk">капуста</span></h2>
+      <p class="lead">Finely shredded white cabbage goes in near the end, so it keeps a slight bite.</p>
+      <p class="muted">In winter some families use sauerkraut instead of fresh cabbage, which makes the soup more sour. Beans are another common addition at this stage.</p>
+      <div class="meta"><span>thin shreds</span><span>5–10 min</span><span>fresh or sauerkraut</span></div>
+    </section>
+
+    <section class="step ing" data-i="6">
+      <p class="kicker">07 · The finish</p>
+      <h2>Garlic &amp; greens<span class="uk">часник і зелень</span></h2>
+      <p class="lead">Crushed garlic, chopped dill and parsley are added off the heat. Some cooks pound the garlic with salo into a paste first.</p>
+      <p class="muted">Then the lid goes on and the pot rests for 20–30 minutes. Ukrainians say the borshch has to <i>nastoiatysia</i>, to steep. It is often better the next day.</p>
+      <div class="meta"><span>off the heat</span><span>rest 20–30 min</span></div>
+    </section>
+
+    <section class="step ing" data-i="7">
+      <p class="kicker">08 · In the bowl</p>
+      <h2>Smetana &amp; dill<span class="uk">сметана</span></h2>
+      <p class="lead">Each bowl gets a spoonful of smetana, thick sour cream, and a pinch of fresh dill.</p>
+      <p class="muted">On the side: <i>pampushky</i>, soft yeast buns brushed with garlic and oil, or dark rye bread with a thin slice of salo and a clove of raw garlic.</p>
+      <div class="meta"><span>1 heaped spoon</span><span>pampushky</span><span>rye + salo</span></div>
+    </section>
+
+    <section class="step outro" id="outro">
+      <p class="kicker">Back in the pot</p>
+      <h2>One dish, many borshches</h2>
+      <p class="lead">The layers stay the same, but every region adjusts them.</p>
+      <ul class="variants">
+        <li><b>Poltava</b><span>Made with poultry, often goose, and served with small wheat dumplings, halushky.</span></li>
+        <li><b>Lenten</b><span>No meat. Broth from dried mushrooms and beans, sometimes with prunes for a smoky sweetness.</span></li>
+        <li><b>Green</b><span>A spring version made with sorrel instead of beets, finished with a halved boiled egg.</span></li>
+        <li><b>Cold</b><span>Kholodnyk: a summer soup of beets, cucumber, radish and dill in a chilled beet broth with kefir or sour cream.</span></li>
+      </ul>
+      <p class="muted">Scroll back up to take it apart again.</p>
+    </section>
+  </main>
+
+  <footer>Cooking times are typical ranges for a family pot. Every Ukrainian kitchen does it a little differently.</footer>
+</div>
+
+<script>
+(function(){
+  const NS="http://www.w3.org/2000/svg";
+  const svg=document.getElementById("pot");
+  const CX=190, RX=136, RB=124, RY=30, H0=184, N=8;
+  const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;};
+  function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+  const LAYERS=[
+    {name:"Broth",   top:"#C98A3E", side:"#9A5F22"},
+    {name:"Potatoes",top:"#E3C57C", side:"#B8964B"},
+    {name:"Beets",   top:"#8E1538", side:"#5E0B24"},
+    {name:"Carrot & onion", top:"#D9772E", side:"#A5531A"},
+    {name:"Tomato",  top:"#C8342B", side:"#8F1F18"},
+    {name:"Cabbage", top:"#B9CF8C", side:"#8AA25C"},
+    {name:"Garlic & greens", top:"#8B1C2E", side:"#5A0F1C"},
+    {name:"Smetana & dill",  top:"#9E1C32", side:"#65101F"}
+  ];
+
+  const defs=el("defs",{},svg);
+  const cp=el("clipPath",{id:"disk"},defs);
+  el("ellipse",{cx:0,cy:0,rx:RX-3,ry:RY-2},cp);
+  const silhouette=H=>`M${-RX} 0 L${-RB} ${H} A${RB} ${RY*.9} 0 0 0 ${RB} ${H} L${RX} 0 A${RX} ${RY} 0 0 0 ${-RX} 0 Z`;
+  const bc=el("clipPath",{id:"bodyclip"},defs);
+  el("path",{d:silhouette(H0)},bc);
+
+  // Pot back (behind layers)
+  const potBack=el("g",{},svg);
+  el("ellipse",{cx:CX,cy:300,rx:150,ry:36,fill:"var(--pot-inner)","fill-opacity":.5,stroke:"var(--pot-line)","stroke-width":2},potBack);
+
+  // Steam
+  const steam=el("g",{class:"steam"},svg);
+  ["M160 270 C148 250 176 240 162 214","M192 266 C204 244 178 234 194 204","M224 270 C236 250 210 238 226 214"].forEach(d=>el("path",{d},steam));
+
+  // Layers
+  const layerEls=[];
+  const topPt=r=>{const a=r()*Math.PI*2, s=Math.sqrt(r());return [Math.cos(a)*s*(RX-12), Math.sin(a)*s*(RY-6)];};
+  const bodyPt=r=>[(r()*2-1)*(RB-12), 14+r()*(H0+RY*.5-20)];
+  function decorate(i,g,r,pt,body){
+    const n=(k,f)=>{for(let j=0;j<k;j++)f(j);};
+    if(i===0){ n(26,()=>{const[x,y]=pt(r);const s=2+r()*5;el("ellipse",{cx:x,cy:y,rx:s,ry:s*.45,fill:"#F4D18E","fill-opacity":.55,stroke:"#FBE7BE","stroke-opacity":.6,"stroke-width":.8},g);}); }
+    if(i===1){ n(34,()=>{const[x,y]=pt(r);el("rect",{x:-6,y:-6,width:12,height:12,rx:2.5,fill:r()>.5?"#EED8A0":"#E6CB85",stroke:"#B08E45","stroke-width":.8,transform:`translate(${x} ${y}) scale(1 .5) rotate(${r()*90})`},g);}); }
+    if(i===2){ n(46,()=>{const[x,y]=pt(r);el("rect",{x:-9,y:-2.5,width:18,height:5,rx:1.5,fill:r()>.5?"#6E0E2A":"#B0224C",transform:`translate(${x} ${y}) scale(1 .5) rotate(${r()*180})`},g);}); }
+    if(i===3){ n(36,()=>{const[x,y]=pt(r);el("rect",{x:-10,y:-1.8,width:20,height:3.6,rx:1.5,fill:"#F08A32",transform:`translate(${x} ${y}) scale(1 .5) rotate(${r()*180})`},g);});
+               n(12,()=>{const[x,y]=pt(r);el("path",{d:"M-8 0 A8 8 0 0 1 8 0",fill:"none",stroke:"#F6EBD2","stroke-width":2.2,transform:`translate(${x} ${y}) scale(1 .5) rotate(${r()*360})`},g);}); }
+    if(i===4){ n(14,()=>{const[x,y]=pt(r);const t=`translate(${x} ${y}) scale(1 .5) rotate(${r()*360})`;el("path",{d:"M0 0 L10 -6 A12 12 0 0 1 10 6 Z",fill:"#E5503B",stroke:"#F3A08E","stroke-width":1,transform:t},g);});
+               n(5,()=>{const[x,y]=pt(r);el("path",{d:"M-24 0 C-12 -8 12 8 24 0",fill:"none",stroke:"#7E150F","stroke-width":2.5,"stroke-linecap":"round",transform:`translate(${x} ${y}) scale(1 .5) rotate(${r()*180})`},g);}); }
+    if(i===5){ n(40,()=>{const[x,y]=pt(r);el("path",{d:"M-12 0 C-4 -6 4 6 12 0",fill:"none",stroke:r()>.5?"#D8E8B4":"#9DB76A","stroke-width":2,"stroke-linecap":"round",transform:`translate(${x} ${y}) scale(1 .5) rotate(${r()*180})`},g);}); }
+    if(i===6){ n(6,()=>{const[x,y]=pt(r);el("path",{d:"M-14 0 C-6 -6 6 -6 14 0 C6 6 -6 6 -14 0 Z",fill:"#6F7F3B",stroke:"#4F5E26","stroke-width":.8,transform:`translate(${x} ${y}) scale(1 .5) rotate(${r()*180})`},g);});
+               n(9,()=>{const[x,y]=pt(r);el("ellipse",{rx:5,ry:3.2,fill:"#F2EAD6",stroke:"#CFC3A5","stroke-width":.8,transform:`translate(${x} ${y}) scale(1 .6) rotate(${r()*180})`},g);});
+               n(18,()=>{const[x,y]=pt(r);el("circle",{cx:x,cy:y,r:1.6,fill:"#2A1A12"},g);}); }
+    if(i===7){ if(!body){ el("path",{d:"M-38 2 C-40 -8 -18 -14 0 -12 C22 -14 42 -6 36 4 C30 12 -30 12 -38 2 Z",fill:"#FBF6EC",stroke:"#E8DECB","stroke-width":1},g);
+               el("ellipse",{cx:-8,cy:-4,rx:14,ry:3,fill:"#FFFFFF","fill-opacity":.8},g); }
+               n(9,()=>{const[x,y]=pt(r);const fr=el("g",{transform:`translate(${x} ${y}) scale(1 .5) rotate(${r()*360})`},g);
+                 el("path",{d:"M0 0 L16 0",stroke:"#5E8A3C","stroke-width":1.4},fr);
+                 for(let k=3;k<16;k+=3){el("path",{d:`M${k} 0 l4 -4 M${k} 0 l4 4`,stroke:"#7AAA4E","stroke-width":1.1,"stroke-linecap":"round"},fr);}
+               }); }
+  }
+  LAYERS.forEach((L,i)=>{
+    const gid="grad"+i;
+    const gr=el("linearGradient",{id:gid,x1:0,y1:0,x2:1,y2:0},defs);
+    el("stop",{offset:0,"stop-color":L.side},gr);
+    el("stop",{offset:.42,"stop-color":L.top},gr);
+    el("stop",{offset:1,"stop-color":L.side},gr);
+    const g=el("g",{class:"layer"},svg);
+    const back=el("path",{fill:"none",stroke:L.side,"stroke-opacity":.5,"stroke-width":1,"stroke-dasharray":"3 4"},g);
+    const body=el("path",{fill:`url(#${gid})`},g);
+    const bodyWrap=el("g",{"clip-path":"url(#bodyclip)"},g);
+    const bodyDecor=el("g",{opacity:.8},bodyWrap);
+    decorate(i,bodyDecor,rng(907+i*31),bodyPt,true);
+    const edge=el("path",{fill:"none",stroke:L.side,"stroke-width":1.4,"stroke-opacity":.9},g);
+    el("ellipse",{cx:0,cy:0,rx:RX,ry:RY,fill:L.top,"fill-opacity":.88},g);
+    const dg=el("g",{"clip-path":"url(#disk)"},g);
+    decorate(i,dg,rng(101+i*17),topPt,false);
+    el("ellipse",{cx:0,cy:0,rx:RX,ry:RY,fill:"none",stroke:L.side,"stroke-width":1.4},g);
+    const hl=el("path",{class:"hl"},g);
+    const lg=el("g",{},g);
+    el("line",{class:"lbl-line",x1:RX+6,y1:0,x2:RX+24,y2:0},lg);
+    const t=el("text",{class:"lbl",x:RX+30,y:4},lg);
+    t.textContent=String(i+1).padStart(2,"0")+" "+L.name;
+    layerEls.push({g,back,body,bodyWrap,bodyDecor,edge,hl,lg});
+  });
+
+  // Pot front (semi-transparent, over layers)
+  const potFront=el("g",{},svg);
+  el("path",{d:"M40 300 L54 506 A136 30 0 0 0 326 506 L340 300 A150 36 0 0 1 40 300 Z",fill:"var(--pot)","fill-opacity":.28,stroke:"var(--pot-line)","stroke-width":2,"stroke-linejoin":"round"},potFront);
+  el("path",{d:"M44 356 A147 34 0 0 0 336 356",fill:"none",stroke:"var(--beet)","stroke-width":5,"stroke-opacity":.7},potFront);
+  el("path",{d:"M49 452 A142 32 0 0 0 331 452",fill:"none",stroke:"var(--beet)","stroke-width":2,"stroke-opacity":.6},potFront);
+  el("path",{d:"M42 324 C8 322 6 354 46 358",fill:"none",stroke:"var(--pot-line)","stroke-width":5,"stroke-linecap":"round"},potFront);
+  el("path",{d:"M338 324 C372 322 374 354 334 358",fill:"none",stroke:"var(--pot-line)","stroke-width":5,"stroke-linecap":"round"},potFront);
+
+  // Scroll logic
+  const intro=document.getElementById("intro"), outro=document.getElementById("outro");
+  const steps=[...document.querySelectorAll(".ing")];
+  const cap=document.getElementById("caption");
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  let queued=false, lastCap="", lastActive=-2;
+
+  function update(){
+    queued=false;
+    const vh=innerHeight, mobile=innerWidth<=820;
+    const ref=mobile?vh*0.7:vh*0.5, band=vh*0.3;
+    const ib=intro.getBoundingClientRect().bottom, ot=outro.getBoundingClientRect().top;
+    const sIn=clamp((ref+band/2-ib)/band,0,1), sOut=clamp((ot-(ref-band/2))/band,0,1);
+    const s=ease(Math.min(sIn,sOut));
+
+    let active=-1, best=1e9;
+    steps.forEach((st,i)=>{const r=st.getBoundingClientRect();const d=r.top<=ref&&r.bottom>ref?0:Math.min(Math.abs(r.top-ref),Math.abs(r.bottom-ref));if(d<best){best=d;active=i;}});
+    if(s<0.05) active=-1;
+
+    const H=lerp(H0,92,s);
+    layerEls.forEach((L,i)=>{
+      const y=lerp(316, 490-i*62, s);
+      const on=i===active;
+      L.g.setAttribute("transform",`translate(${CX} ${y.toFixed(2)})`);
+      L.body.setAttribute("d",silhouette(H));
+      L.body.setAttribute("fill-opacity",lerp(0.13, on?0.5:0.2, s).toFixed(3));
+      L.back.setAttribute("d",`M${-RB} ${H} A${RB} ${RY*.9} 0 0 1 ${RB} ${H}`);
+      L.edge.setAttribute("d",`M${-RX} 0 L${-RB} ${H} A${RB} ${RY*.9} 0 0 0 ${RB} ${H} L${RX} 0`);
+      L.hl.setAttribute("d",silhouette(H)+` M${-RX} 0 A${RX} ${RY} 0 0 0 ${RX} 0`);
+      L.bodyWrap.setAttribute("transform",`scale(1 ${(H/H0).toFixed(4)})`);
+      L.g.style.opacity=lerp(0.8, on?1:0.5, s).toFixed(3);
+      L.hl.style.opacity=on?s:0;
+      L.lg.style.opacity=(s*(on?1:0.6)).toFixed(3);
+    });
+    if(active!==lastActive){
+      layerEls.forEach(L=>svg.insertBefore(L.g,potFront));
+      if(active>=0) svg.insertBefore(layerEls[active].g,potFront);
+      lastActive=active;
+    }
+    potFront.style.opacity=lerp(1,0.06,s).toFixed(3);
+    potBack.style.opacity=lerp(1,0,s).toFixed(3);
+    steam.style.opacity=(1-s*2).toFixed(3);
+
+    const c=active>=0?`Layer <b>${String(active+1).padStart(2,"0")}</b> of 08 · ${LAYERS[active].name}`:(s>0.5?"Separating":"The whole pot");
+    if(c!==lastCap){cap.innerHTML=c;lastCap=c;}
+  }
+  const req=()=>{if(!queued){queued=true;requestAnimationFrame(update);}};
+  addEventListener("scroll",req,{passive:true});
+  addEventListener("resize",req);
+  update();
+})();
+</script>
+</body>
+</html>
