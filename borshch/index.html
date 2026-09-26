@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ukrainian Borshch (Borscht) Recipe, Layer by Layer</title>
-<meta name="description" content="How to make real Ukrainian borshch (borscht), explained layer by layer in an interactive, scrolling pot: broth, potatoes, beets, zasmazhka, tomato, cabbage, garlic, greens and smetana, plus regional variants.">
+<title>Ukrainian Borshch (Borscht) Recipe and Ingredients</title>
+<meta name="description" content="Recipe for real Ukrainian borshch (borscht): broth, potatoes, beets, zasmazhka, tomato, cabbage, garlic, greens and smetana, with cooking times, tips and regional variants.">
 <meta name="keywords" content="borshch, borscht, borsch, борщ, Ukrainian borshch recipe, Ukrainian beet soup, how to make borscht, zasmazhka, pampushky, Lenten borshch, green borshch, kholodnyk, UNESCO borshch">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 <link rel="canonical" href="https://sanderch.github.io/borshch/">
@@ -15,17 +15,17 @@
 
 <meta property="og:type" content="article">
 <meta property="og:locale" content="en_US">
-<meta property="og:title" content="Ukrainian Borshch, Layer by Layer">
-<meta property="og:description" content="Scroll to take a pot of Ukrainian borshch (borscht) apart: eight layers, from broth to smetana, and the regional variants.">
+<meta property="og:title" content="Ukrainian Borshch Recipe and Ingredients">
+<meta property="og:description" content="Ukrainian borshch (borscht) recipe and ingredients, from broth to smetana, plus regional variants.">
 <meta property="og:url" content="https://sanderch.github.io/borshch/">
 <meta property="og:image" content="https://sanderch.github.io/borshch/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Illustrated pot of borshch separating into eight ingredient layers">
+<meta property="og:image:alt" content="Illustrated pot of borshch separating into its eight ingredients">
 <meta property="article:published_time" content="2026-09-26">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Ukrainian Borshch, Layer by Layer">
-<meta name="twitter:description" content="Scroll to take a pot of Ukrainian borshch (borscht) apart, layer by layer.">
+<meta name="twitter:title" content="Ukrainian Borshch Recipe and Ingredients">
+<meta name="twitter:description" content="Ukrainian borshch (borscht) recipe and ingredients, from broth to smetana.">
 <meta name="twitter:image" content="https://sanderch.github.io/borshch/og-image.png">
 
 <script type="application/ld+json">
@@ -160,7 +160,7 @@ footer{grid-column:1/-1;padding-block:28px 40px;border-top:1px solid var(--rule)
 <body>
 <div class="wrap">
   <div class="stage" aria-hidden="true">
-    <svg id="pot" viewBox="0 0 520 624" role="img" aria-label="Borshch pot separating into its ingredient layers"></svg>
+    <svg id="pot" viewBox="0 0 520 624" role="img" aria-label="Borshch pot separating into its ingredients"></svg>
     <div class="caption" id="caption">The whole pot</div>
   </div>
 
@@ -173,7 +173,7 @@ footer{grid-column:1/-1;padding-block:28px 40px;border-top:1px solid var(--rule)
       <dl class="facts">
         <div><dt>Pot size</dt><dd>4–6 L</dd></div>
         <div><dt>Cooking time</dt><dd>~2½ h</dd></div>
-        <div><dt>Layers</dt><dd>8</dd></div>
+        <div><dt>Ingredients</dt><dd>8</dd></div>
       </dl>
       <p class="cue">Scroll to take the pot apart</p>
     </section>
@@ -245,7 +245,7 @@ footer{grid-column:1/-1;padding-block:28px 40px;border-top:1px solid var(--rule)
     <section class="step outro" id="outro" aria-labelledby="variants-h">
       <p class="kicker">Back in the pot</p>
       <h2 id="variants-h">One dish, many borshches</h2>
-      <p class="lead">The layers stay the same, but every region adjusts them.</p>
+      <p class="lead">The basics stay the same, but every region adjusts them.</p>
       <ul class="variants">
         <li><b>Poltava</b><span>Made with poultry, often goose, and served with small wheat dumplings, halushky.</span></li>
         <li><b>Lenten</b><span>No meat. Broth from dried mushrooms and beans, sometimes with prunes for a smoky sweetness.</span></li>
@@ -395,7 +395,7 @@ footer{grid-column:1/-1;padding-block:28px 40px;border-top:1px solid var(--rule)
     potBack.style.opacity=lerp(1,0,s).toFixed(3);
     steam.style.opacity=(1-s*2).toFixed(3);
 
-    const c=active>=0?`Layer <b>${String(active+1).padStart(2,"0")}</b> of 08 · ${LAYERS[active].name}`:(s>0.5?"Separating":"The whole pot");
+    const c=active>=0?`Ingredient <b>${String(active+1).padStart(2,"0")}</b> of 08 · ${LAYERS[active].name}`:(s>0.5?"Separating":"The whole pot");
     if(c!==lastCap){cap.innerHTML=c;lastCap=c;}
   }
   const req=()=>{if(!queued){queued=true;requestAnimationFrame(update);}};
